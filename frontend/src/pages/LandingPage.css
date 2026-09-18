@@ -1,0 +1,19 @@
+.hero-section {
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(rgba(8, 31, 63, 0.45), rgba(8, 31, 63, 0.55)),
+    url('../Formosa.jpg') center / cover,
+    #1a428a;
+}
+
+.landing-card {
+  border-radius: 20px;
+  transition: transform 0.3s ease;
+}
+
+.landing-card:hover {
+  transform: translateY(-8px);
+}
