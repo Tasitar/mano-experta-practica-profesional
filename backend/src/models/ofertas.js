@@ -24,6 +24,10 @@ const Oferta = sequelize.define('Oferta', {
         type: DataTypes.TEXT,
         allowNull: false
     },
+    empleador_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     latitud: {
         type: DataTypes.DECIMAL(10, 7),
         allowNull: false

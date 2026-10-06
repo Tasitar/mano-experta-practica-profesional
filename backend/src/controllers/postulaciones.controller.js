@@ -51,8 +51,13 @@ const cambiarEstado = async (req, res) => {
 
 const eliminar = async (req, res) => {
     try {
-        const postulacion = await Postulacion.findByPk(req.params.id);
-        if (!postulacion) return res.status(404).json({ error: 'Postulación no encontrada' });
+        const { perfil_id } = req.query;
+        if (!perfil_id) return res.status(400).json({ error: 'El perfil es obligatorio para eliminar la postulación' });
+
+        const postulacion = await Postulacion.findOne({
+            where: { id: req.params.id, perfil_id }
+        });
+        if (!postulacion) return res.status(404).json({ error: 'Postulación no encontrada para este perfil' });
 
         await postulacion.destroy();
         res.json({ mensaje: 'Postulación eliminada' });

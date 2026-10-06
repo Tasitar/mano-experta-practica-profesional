@@ -11,6 +11,10 @@ const crearOfertaValidation = [
         .notEmpty().withMessage('La empresa es obligatoria')
         .isLength({ max: 150 }).withMessage('Máximo 150 caracteres'),
 
+    body('empleador_id')
+        .notEmpty().withMessage('El perfil del empleador es obligatorio')
+        .isInt({ min: 1 }).withMessage('empleador_id debe ser un número entero positivo'),
+
     body('modalidad')
         .notEmpty().withMessage('La modalidad es obligatoria')
         .isIn(['Presencial', 'Remoto', 'Híbrido'])
