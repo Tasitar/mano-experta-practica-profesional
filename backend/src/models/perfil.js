@@ -11,6 +11,29 @@ const Perfil = sequelize.define('Perfil', {
         type: DataTypes.STRING(150),
         allowNull: false
     },
+    email: {
+        type: DataTypes.STRING(150),
+        allowNull: true,
+        unique: true,
+        validate: { isEmail: true }
+    },
+    password_hash: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    },
+    edad: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    sexo: {
+        type: DataTypes.STRING(30),
+        allowNull: true
+    },
+    rol: {
+        type: DataTypes.ENUM('empleado', 'empleador'),
+        allowNull: false,
+        defaultValue: 'empleado'
+    },
     fecha_nacimiento: {
         type: DataTypes.DATEONLY,
         allowNull: false

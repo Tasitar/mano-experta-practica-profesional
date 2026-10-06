@@ -9,7 +9,10 @@ const listar = async (req, res) => {
 
         const postulaciones = await Postulacion.findAll({
             where,
-            include: [{ model: Perfil }, { model: Oferta }],
+            include: [
+                { model: Perfil, attributes: { exclude: ['password_hash'] } },
+                { model: Oferta }
+            ],
             order: [['created_at', 'DESC']]
         });
         res.json(postulaciones);

@@ -28,7 +28,7 @@ const postulantes = async (req, res) => {
 
         const lista = await Postulacion.findAll({
             where: { oferta_id: req.params.id },
-            include: [{ model: Perfil }],
+            include: [{ model: Perfil, attributes: { exclude: ['password_hash'] } }],
             order: [['created_at', 'DESC']]
         });
         res.json(lista);

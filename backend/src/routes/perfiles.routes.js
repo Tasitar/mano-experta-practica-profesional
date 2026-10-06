@@ -3,8 +3,10 @@ const router = Router();
 
 import * as ctrl from '../controllers/perfiles.controller.js';
 import validate from '../middlewares/validations/validation.js';
-import { crearPerfilValidation, editarPerfilValidation } from '../middlewares/perfil.validations.js';
+import { autenticacionValidation, registroValidation, crearPerfilValidation, editarPerfilValidation } from '../middlewares/perfil.validations.js';
 
+router.post('/registro', registroValidation, validate, ctrl.registrar);
+router.post('/login', autenticacionValidation, validate, ctrl.login);
 router.get('/',     ctrl.listar);
 router.get('/:id',  ctrl.obtener);
 router.post('/',    crearPerfilValidation, validate, ctrl.crear);

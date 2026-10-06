@@ -1,5 +1,25 @@
 import { body } from 'express-validator';
 
+const autenticacionValidation = [
+    body('email')
+        .trim()
+        .isEmail().withMessage('Ingresa un correo electrónico válido')
+        .normalizeEmail(),
+    body('password')
+        .isString().withMessage('La contraseña es obligatoria')
+        .isLength({ min: 8 }).withMessage('La contraseña debe tener al menos 8 caracteres')
+];
+
+const registroValidation = [
+    body('nombre_apellido').trim().notEmpty().withMessage('El nombre y apellido es obligatorio'),
+    body('domicilio').trim().notEmpty().withMessage('El domicilio es obligatorio'),
+    body('edad').isInt({ min: 13, max: 120 }).withMessage('La edad debe estar entre 13 y 120 años'),
+    body('sexo').trim().notEmpty().withMessage('El sexo es obligatorio'),
+    body('fecha_nacimiento').isDate().withMessage('Formato de fecha inválido (YYYY-MM-DD)'),
+    body('rol').optional().isIn(['empleado', 'empleador']).withMessage('El rol no es válido'),
+    ...autenticacionValidation
+];
+
 const crearPerfilValidation = [
     body('nombre_apellido')
         .trim()
@@ -37,7 +57,19 @@ const editarPerfilValidation = [
     body('domicilio')
         .optional()
         .trim()
-        .isLength({ max: 255 }).withMessage('Máximo 255 caracteres')
+        .isLength({ max: 255 }).withMessage('Máximo 255 caracteres'),
+
+    body('aptitudes')
+        .optional()
+        .isString().withMessage('Las aptitudes deben ser texto')
+        .trim()
+        .notEmpty().withMessage('Las aptitudes son obligatorias'),
+
+    body('experiencias')
+        .optional()
+        .isString().withMessage('Las experiencias deben ser texto')
+        .trim()
+        .notEmpty().withMessage('Las experiencias son obligatorias')
 ];
 
-export { crearPerfilValidation, editarPerfilValidation };
+export { autenticacionValidation, registroValidation, crearPerfilValidation, editarPerfilValidation };
