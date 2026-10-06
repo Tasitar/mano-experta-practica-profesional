@@ -6,6 +6,8 @@ const api = axios.create({
 });
 
 export const PerfilesService = {
+    registrar: (datos)    => api.post('/perfiles/registro', datos),
+    login:    (datos)     => api.post('/perfiles/login', datos),
     listar:  ()           => api.get('/perfiles'),
     obtener: (id)         => api.get(`/perfiles/${id}`),
     crear:   (datos)      => api.post('/perfiles', datos),

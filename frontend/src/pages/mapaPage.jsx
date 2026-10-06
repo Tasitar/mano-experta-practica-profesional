@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Circle, Popup, useMapEvents } from 'react-leaflet';
-import { useSesion } from '../context/SesionContext';
-import { OfertasService, PostulacionesService } from '../services/api';
+import { useSesion } from '../context/sesionContext';
+import { OfertasService, PerfilesService, PostulacionesService } from '../services/api';
+import SelectorModo from '../components/SelectorModo';
 import 'leaflet/dist/leaflet.css';
 
 const COLORES = {
@@ -22,7 +23,7 @@ function ClickHandler({ onMapClick, activo }) {
 }
 
 export default function MapaPage() {
-    const { rol, perfilId, cerrar } = useSesion();
+    const { rol, perfilId } = useSesion();
     const navigate   = useNavigate();
     const esEmpleador = rol === 'empleador';
     const esEmpleado  = rol === 'empleado';
@@ -71,6 +72,17 @@ export default function MapaPage() {
             return;
         }
         try {
+            const { data: perfil } = await PerfilesService.obtener(perfilId);
+            if (!perfil.aptitudes?.trim() || !perfil.experiencias?.trim()) {
+                alert('Completá y guardá tus aptitudes y experiencias en tu CV antes de postularte.');
+                navigate('/cv');
+                return;
+            }
+        } catch (err) {
+            alert(err.response?.data?.error || 'No se pudo verificar tu CV. Intentá nuevamente.');
+            return;
+        }
+        try {
             await PostulacionesService.crear(perfilId, ofertaId);
             mostrarToast('✅ Te postulaste correctamente.');
         } catch (err) {
@@ -84,8 +96,6 @@ export default function MapaPage() {
         setTimeout(() => setToast(''), 3000);
     };
 
-    const salir = () => { cerrar(); navigate('/'); };
-
     return (
         <div style={{ background: '#f4f4f4', minHeight: '100vh' }}>
 
@@ -94,9 +104,7 @@ export default function MapaPage() {
                 <div className="container">
                     <span className="navbar-brand mb-0 h1">Tablón de Empleo · Mapa</span>
                     <div>
-                        {esEmpleado  && <button className="btn btn-light btn-sm me-2" onClick={() => navigate('/cv')}>Mi perfil</button>}
-                        {esEmpleador && <button className="btn btn-light btn-sm me-2" onClick={() => navigate('/empleador')}>Panel empleador</button>}
-                        <button className="btn btn-outline-light btn-sm" onClick={salir}>Salir</button>
+                        <SelectorModo />
                     </div>
                 </div>
             </nav>

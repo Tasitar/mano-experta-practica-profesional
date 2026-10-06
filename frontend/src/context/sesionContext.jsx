@@ -12,6 +12,11 @@ export function SesionProvider({ children }) {
     };
 
     const guardarPerfilId = (id) => {
+        if (!id) {
+            localStorage.removeItem('tablon_perfil_id');
+            setPerfilId(null);
+            return;
+        }
         localStorage.setItem('tablon_perfil_id', String(id));
         setPerfilId(String(id));
     };

@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { useSesion } from '../context/sesionContext';
+import SelectorModo from '../components/SelectorModo';
 import './LandingPage.css';
 import logo from '../team-work-logo-design-template-free-vector.jpg';
 
@@ -32,6 +34,7 @@ const herramientas = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { rol } = useSesion();
 
   return (
     <>
@@ -51,7 +54,8 @@ export default function LandingPage() {
             <span style={{ color: '#2600ff' }}>Experta</span>
           </span>
 
-          <div className="ms-auto">
+          <div className="ms-auto d-flex align-items-center">
+            {rol ? <SelectorModo fondoClaro /> : <>
             <button
               className="btn btn-outline-primary rounded-pill px-4 me-2"
               onClick={() => navigate('/login')}
@@ -61,10 +65,11 @@ export default function LandingPage() {
 
             <button
               className="btn btn-primary rounded-pill px-4"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/registro')}
             >
-              Sign In
+              Registrarme
             </button>
+            </>}
           </div>
         </div>
       </nav>

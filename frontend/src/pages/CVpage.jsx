@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSesion } from '../context/SesionContext';
+import { useSesion } from '../context/sesionContext';
 import { PerfilesService, PostulacionesService } from '../services/api';
+import SelectorModo from '../components/SelectorModo';
 
 const ESTADO_COLORES = {
     Pendiente:  '#6c757d',
@@ -11,13 +12,15 @@ const ESTADO_COLORES = {
 };
 
 export default function CVPage() {
-    const { perfilId, guardarPerfilId, cerrar } = useSesion();
+    const { perfilId, guardarPerfilId } = useSesion();
     const navigate = useNavigate();
 
     const [perfil,        setPerfil]        = useState(null);
     const [postulaciones, setPostulaciones] = useState([]);
     const [cargando,      setCargando]      = useState(true);
     const [toast,         setToast]         = useState('');
+    const [error,         setError]         = useState('');
+    const [guardando,     setGuardando]     = useState(false);
     const [form, setForm] = useState({
         nombre_apellido: '', fecha_nacimiento: '',
         domicilio: '', aptitudes: '', experiencias: ''
@@ -28,27 +31,42 @@ export default function CVPage() {
             PerfilesService.obtener(perfilId)
                 .then(r => {
                     setPerfil(r.data);
+                    setForm({
+                        nombre_apellido: r.data.nombre_apellido || '',
+                        fecha_nacimiento: r.data.fecha_nacimiento || '',
+                        domicilio: r.data.domicilio || '',
+                        aptitudes: r.data.aptitudes || '',
+                        experiencias: r.data.experiencias || ''
+                    });
                     return PostulacionesService.porPerfil(perfilId);
                 })
                 .then(r => setPostulaciones(r.data))
-                .catch(() => guardarPerfilId(''))
+                .catch(err => setError(err.response?.data?.error || 'No se pudo cargar tu perfil.'))
                 .finally(() => setCargando(false));
         } else {
             setCargando(false);
         }
-    }, []);
+    }, [perfilId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setGuardando(true);
         try {
-            const { data } = await PerfilesService.crear(form);
-            guardarPerfilId(data.id);
+            const { data } = perfil
+                ? await PerfilesService.editar(perfil.id, {
+                    aptitudes: form.aptitudes,
+                    experiencias: form.experiencias
+                })
+                : await PerfilesService.crear(form);
+            if (!perfil) guardarPerfilId(data.id);
             setPerfil(data);
-            mostrarToast('✅ Perfil guardado correctamente.');
+            mostrarToast('CV guardado correctamente.');
         } catch (err) {
             const errores = err.response?.data?.errors;
-            const msg = errores ? errores.map(e => e.msg).join(', ') : err.message;
-            alert('Error: ' + msg);
+            setError(errores ? errores.map(e => e.msg).join(', ') : (err.response?.data?.error || 'No se pudo guardar tu CV.'));
+        } finally {
+            setGuardando(false);
         }
     };
 
@@ -57,43 +75,85 @@ export default function CVPage() {
         setTimeout(() => setToast(''), 3000);
     };
 
-    const salir = () => { cerrar(); navigate('/'); };
-
-    if (cargando) return <div className="text-center mt-5">Cargando...</div>;
+    if (cargando) {
+        return (
+            <div className="tw-flex tw-min-h-screen tw-items-center tw-justify-center tw-bg-slate-50 tw-text-slate-600">
+                <span className="tw-mr-3 tw-h-5 tw-w-5 tw-animate-spin tw-rounded-full tw-border-2 tw-border-emerald-600 tw-border-t-transparent" />
+                Cargando tu perfil...
+            </div>
+        );
+    }
 
     return (
-        <div style={{ background: '#f4f4f4', minHeight: '100vh' }}>
-
-            <nav className="navbar navbar-dark mb-4" style={{ background: '#198754' }}>
-                <div className="container">
-                    <span className="navbar-brand mb-0 h1">Tablón de Empleo · Empleado</span>
-                    <div>
-                        <button className="btn btn-light btn-sm me-2" onClick={() => navigate('/mapa')}>
-                            Ver mapa de ofertas
+        <div className="tw-min-h-screen tw-bg-slate-50 tw-text-slate-800">
+            <nav className="tw-bg-gradient-to-r tw-from-emerald-800 tw-to-teal-700 tw-text-white tw-shadow-lg">
+                <div className="tw-mx-auto tw-flex tw-max-w-7xl tw-flex-wrap tw-items-center tw-justify-between tw-gap-4 tw-px-5 tw-py-4">
+                    <div className="tw-flex tw-items-center tw-gap-3">
+                        <span className="tw-flex tw-h-11 tw-w-11 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-white/15">
+                            <i className="bi bi-person-workspace tw-text-xl" aria-hidden="true" />
+                        </span>
+                        <div>
+                            <p className="tw-m-0 tw-text-lg tw-font-bold">Mano Experta</p>
+                            <p className="tw-m-0 tw-text-sm tw-text-emerald-100">Espacio de empleado</p>
+                        </div>
+                    </div>
+                    <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+                        <button
+                            className="tw-rounded-xl tw-bg-white tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-emerald-800 tw-transition hover:tw-bg-emerald-50"
+                            onClick={() => navigate('/mapa')}
+                        >
+                            <i className="bi bi-geo-alt tw-mr-2" aria-hidden="true" />
+                            Ver ofertas
                         </button>
-                        <button className="btn btn-outline-light btn-sm" onClick={salir}>Salir</button>
+                        <SelectorModo />
                     </div>
                 </div>
             </nav>
 
-            <div className="container pb-5">
-                <div className="row g-4">
+            <main className="tw-mx-auto tw-max-w-7xl tw-px-5 tw-py-8 md:tw-py-10">
+                <header className="tw-mb-8">
+                    <p className="tw-mb-2 tw-text-sm tw-font-bold tw-uppercase tw-tracking-[0.18em] tw-text-emerald-700">
+                        Tu próxima oportunidad empieza acá
+                    </p>
+                    <h1 className="tw-mb-2 tw-text-3xl tw-font-extrabold tw-tracking-tight tw-text-slate-900 md:tw-text-4xl">
+                        Mi perfil profesional
+                    </h1>
+                    <p className="tw-m-0 tw-max-w-2xl tw-text-slate-500">
+                        Mantené tu información actualizada para que las empresas conozcan tu experiencia y habilidades.
+                    </p>
+                </header>
 
-                    {/* FORMULARIO o PERFIL */}
-                    <div className="col-lg-7">
+                <div className="tw-grid tw-grid-cols-1 tw-items-start tw-gap-6 lg:tw-grid-cols-5">
+                    <section className="tw-space-y-5 lg:tw-col-span-3">
+                        {error && (
+                            <div className="tw-rounded-2xl tw-border tw-border-red-200 tw-bg-red-50 tw-p-4 tw-text-sm tw-font-medium tw-text-red-700" role="alert">
+                                <i className="bi bi-exclamation-circle tw-mr-2" aria-hidden="true" />
+                                {error}
+                            </div>
+                        )}
                         {!perfil ? (
-                            <div className="card">
-                                <div className="card-header bg-success text-white">Mi perfil / CV</div>
-                                <div className="card-body">
+                            <div className="tw-overflow-hidden tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm">
+                                <div className="tw-border-b tw-border-slate-100 tw-p-6 md:tw-p-7">
+                                    <div className="tw-mb-2 tw-flex tw-items-center tw-gap-3">
+                                        <span className="tw-flex tw-h-10 tw-w-10 tw-items-center tw-justify-center tw-rounded-xl tw-bg-emerald-100 tw-text-emerald-700">
+                                            <i className="bi bi-file-earmark-person tw-text-xl" aria-hidden="true" />
+                                        </span>
+                                        <div>
+                                            <h2 className="tw-m-0 tw-text-xl tw-font-bold tw-text-slate-900">Completá tu CV</h2>
+                                            <p className="tw-m-0 tw-mt-1 tw-text-sm tw-text-slate-500">Los campos son necesarios para crear tu perfil.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="tw-p-6 md:tw-p-7">
                                     <form onSubmit={handleSubmit}>
                                         {[
                                             { label: 'Nombre y apellido', key: 'nombre_apellido', type: 'text' },
                                             { label: 'Fecha de nacimiento', key: 'fecha_nacimiento', type: 'date' },
                                             { label: 'Dónde te alojás', key: 'domicilio', type: 'text', placeholder: 'Barrio, ciudad' }
                                         ].map(({ label, key, type, placeholder }) => (
-                                            <div className="mb-3" key={key}>
-                                                <label className="form-label">{label}</label>
-                                                <input type={type} className="form-control"
+                                            <div className="tw-mb-5" key={key}>
+                                                <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">{label}</label>
+                                                <input type={type} className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
                                                     placeholder={placeholder}
                                                     value={form[key]}
                                                     onChange={e => setForm({ ...form, [key]: e.target.value })}
@@ -105,9 +165,9 @@ export default function CVPage() {
                                             { label: 'Aptitudes', key: 'aptitudes', placeholder: 'Ej: manejo de Excel, atención al público...' },
                                             { label: 'Experiencias', key: 'experiencias', placeholder: 'Contá tus trabajos anteriores', rows: 4 }
                                         ].map(({ label, key, placeholder, rows = 3 }) => (
-                                            <div className="mb-3" key={key}>
-                                                <label className="form-label">{label}</label>
-                                                <textarea className="form-control" rows={rows}
+                                            <div className="tw-mb-5" key={key}>
+                                                <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">{label}</label>
+                                                <textarea className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100" rows={rows}
                                                     placeholder={placeholder}
                                                     value={form[key]}
                                                     onChange={e => setForm({ ...form, [key]: e.target.value })}
@@ -115,70 +175,125 @@ export default function CVPage() {
                                             </div>
                                         ))}
 
-                                        <button type="submit" className="btn btn-success w-100">
-                                            Guardar perfil
+                                        <button
+                                            type="submit"
+                                            className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 tw-rounded-xl tw-bg-emerald-700 tw-px-5 tw-py-3 tw-font-bold tw-text-white tw-transition hover:tw-bg-emerald-800 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
+                                            disabled={guardando}
+                                        >
+                                            <i className={`bi ${guardando ? 'bi-hourglass-split' : 'bi-check2-circle'}`} aria-hidden="true" />
+                                            {guardando ? 'Guardando...' : 'Guardar perfil'}
                                         </button>
                                     </form>
                                 </div>
                             </div>
                         ) : (
-                            <div className="card">
-                                <div className="card-header bg-success text-white">Mi perfil / CV</div>
-                                <div className="card-body">
-                                    <h4>{perfil.nombre_apellido}</h4>
-                                    <p className="text-muted mb-3">
-                                        Nacimiento: {new Date(perfil.fecha_nacimiento + 'T00:00:00').toLocaleDateString('es-AR')}
-                                        · {perfil.domicilio}
+                            <div className="tw-overflow-hidden tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm">
+                                <div className="tw-bg-gradient-to-br tw-from-emerald-700 tw-to-teal-600 tw-p-6 tw-text-white md:tw-p-8">
+                                    <div className="tw-flex tw-items-center tw-gap-4">
+                                        <span className="tw-flex tw-h-16 tw-w-16 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-white/15 tw-text-2xl tw-font-extrabold">
+                                            {perfil.nombre_apellido?.charAt(0)?.toUpperCase()}
+                                        </span>
+                                        <div>
+                                            <p className="tw-mb-1 tw-text-sm tw-font-semibold tw-text-emerald-100">Mi perfil profesional</p>
+                                            <h2 className="tw-m-0 tw-text-2xl tw-font-extrabold">{perfil.nombre_apellido}</h2>
+                                            <p className="tw-mb-0 tw-mt-2 tw-text-sm tw-text-emerald-50">
+                                                <i className="bi bi-geo-alt tw-mr-1" aria-hidden="true" />
+                                                {perfil.domicilio}
+                                                <span className="tw-mx-2">·</span>
+                                                <i className="bi bi-calendar3 tw-mr-1" aria-hidden="true" />
+                                                {new Date(perfil.fecha_nacimiento + 'T00:00:00').toLocaleDateString('es-AR')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="tw-p-6 md:tw-p-8">
+                                    <p className="tw-mb-6 tw-rounded-xl tw-bg-emerald-50 tw-p-4 tw-text-sm tw-leading-6 tw-text-emerald-900">
+                                        <i className="bi bi-info-circle tw-mr-2" aria-hidden="true" />
+                                        Los empleadores verán esta información cuando te postules a una oferta.
                                     </p>
-                                    <h6>Aptitudes</h6>
-                                    <p>{perfil.aptitudes}</p>
-                                    <h6>Experiencias</h6>
-                                    <p>{perfil.experiencias}</p>
+                                    <form onSubmit={handleSubmit}>
+                                        <div className="tw-mb-5">
+                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="aptitudes">Aptitudes</label>
+                                            <textarea
+                                                id="aptitudes"
+                                                className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                rows={4}
+                                                placeholder="Ej: manejo de Excel, atención al público..."
+                                                value={form.aptitudes}
+                                                onChange={e => setForm({ ...form, aptitudes: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="tw-mb-5">
+                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="experiencias">Experiencias</label>
+                                            <textarea
+                                                id="experiencias"
+                                                className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                rows={5}
+                                                placeholder="Contá tus trabajos anteriores, tareas realizadas y logros."
+                                                value={form.experiencias}
+                                                onChange={e => setForm({ ...form, experiencias: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 tw-rounded-xl tw-bg-emerald-700 tw-px-5 tw-py-3 tw-font-bold tw-text-white tw-transition hover:tw-bg-emerald-800 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
+                                            disabled={guardando}
+                                        >
+                                            <i className={`bi ${guardando ? 'bi-hourglass-split' : 'bi-check2-circle'}`} aria-hidden="true" />
+                                            {guardando ? 'Guardando...' : 'Guardar CV'}
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </section>
 
-                    {/* POSTULACIONES */}
-                    <div className="col-lg-5">
-                        <div className="card">
-                            <div className="card-header bg-primary text-white">Mis postulaciones</div>
-                            <div className="card-body">
-                                {!perfil && <p className="text-muted">Cargá tu perfil primero.</p>}
-                                {perfil && postulaciones.length === 0 && (
-                                    <p className="text-muted">Todavía no te postulaste a ninguna oferta.</p>
-                                )}
-                                {postulaciones.map(p => (
-                                    <div className="card mb-3" key={p.id}
-                                        style={{ borderLeft: `4px solid ${ESTADO_COLORES[p.estado] ?? '#6c757d'}` }}>
-                                        <div className="card-body">
-                                            <div className="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h6 className="mb-1">{p.Oferta.puesto}</h6>
-                                                    <p className="text-muted mb-0 small">
-                                                        {p.Oferta.empresa} · {p.Oferta.modalidad}
-                                                    </p>
-                                                </div>
-                                                <span className="badge" style={{ background: ESTADO_COLORES[p.estado] }}>
-                                                    {p.estado}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                    <aside className="tw-overflow-hidden tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm lg:tw-col-span-2">
+                        <div className="tw-border-b tw-border-slate-100 tw-p-6">
+                            <div className="tw-flex tw-items-center tw-justify-between tw-gap-3">
+                                <div>
+                                    <h2 className="tw-m-0 tw-text-lg tw-font-bold tw-text-slate-900">Mis postulaciones</h2>
+                                    <p className="tw-m-0 tw-mt-1 tw-text-sm tw-text-slate-500">Seguimiento de tus oportunidades</p>
+                                </div>
+                                <span className="tw-flex tw-h-10 tw-w-10 tw-items-center tw-justify-center tw-rounded-xl tw-bg-blue-50 tw-text-blue-700">
+                                    <i className="bi bi-send tw-text-lg" aria-hidden="true" />
+                                </span>
                             </div>
                         </div>
-                    </div>
-
+                        <div className="tw-space-y-3 tw-p-5">
+                                {!perfil && <p className="tw-m-0 tw-rounded-xl tw-bg-slate-50 tw-p-4 tw-text-sm tw-text-slate-500">Cargá tu perfil primero.</p>}
+                                {perfil && postulaciones.length === 0 && (
+                                    <div className="tw-rounded-2xl tw-bg-slate-50 tw-px-5 tw-py-8 tw-text-center">
+                                        <i className="bi bi-inbox tw-text-3xl tw-text-slate-300" aria-hidden="true" />
+                                        <p className="tw-mb-0 tw-mt-3 tw-text-sm tw-text-slate-500">Todavía no te postulaste a ninguna oferta.</p>
+                                    </div>
+                                )}
+                                {postulaciones.map(p => (
+                                    <article className="tw-rounded-2xl tw-border tw-border-slate-200 tw-border-l-4 tw-bg-white tw-p-4 tw-shadow-sm" key={p.id}
+                                        style={{ borderLeftColor: ESTADO_COLORES[p.estado] ?? '#6c757d' }}>
+                                        <div className="tw-flex tw-items-start tw-justify-between tw-gap-3">
+                                            <div className="tw-min-w-0">
+                                                <h3 className="tw-m-0 tw-truncate tw-text-sm tw-font-bold tw-text-slate-900">{p.Oferta?.puesto || 'Oferta no disponible'}</h3>
+                                                <p className="tw-mb-0 tw-mt-1 tw-text-xs tw-text-slate-500">
+                                                    {p.Oferta?.empresa || 'Empresa no disponible'} <span className="tw-mx-1">·</span> {p.Oferta?.modalidad || 'Modalidad no disponible'}
+                                                    </p>
+                                            </div>
+                                            <span className="tw-shrink-0 tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white" style={{ background: ESTADO_COLORES[p.estado] ?? '#6c757d' }}>
+                                                {p.estado}
+                                            </span>
+                                        </div>
+                                    </article>
+                                ))}
+                        </div>
+                    </aside>
                 </div>
-            </div>
+            </main>
 
             {toast && (
-                <div style={{
-                    position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-                    background: '#198754', color: '#fff', padding: '10px 20px',
-                    borderRadius: 6, zIndex: 9999
-                }}>
+                <div className="tw-fixed tw-bottom-6 tw-left-1/2 tw-z-[9999] tw-flex tw--translate-x-1/2 tw-items-center tw-gap-2 tw-rounded-xl tw-bg-emerald-800 tw-px-5 tw-py-3 tw-font-semibold tw-text-white tw-shadow-xl" role="status">
+                    <i className="bi bi-check-circle-fill" aria-hidden="true" />
                     {toast}
                 </div>
             )}

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSesion } from '../context/SesionContext';
+import { useSesion } from '../context/sesionContext';
 import { OfertasService, PostulacionesService } from '../services/api';
+import SelectorModo from '../components/SelectorModo';
 
 const ESTADO_COLORES = {
     Pendiente:  '#6c757d',
@@ -17,7 +18,6 @@ const BADGE_MODALIDAD = {
 };
 
 export default function EmpleadorPage() {
-    const { cerrar } = useSesion();
     const navigate   = useNavigate();
 
     const [ofertas,           setOfertas]           = useState([]);
@@ -77,196 +77,244 @@ export default function EmpleadorPage() {
         }
     };
 
-    const salir = () => { cerrar(); navigate('/'); };
-
     return (
-        <div style={{ background: '#f4f4f4', minHeight: '100vh' }}>
+        <div className="tw-min-h-screen tw-bg-slate-50 tw-text-slate-800">
 
-            {/* Navbar */}
-            <nav className="navbar navbar-dark mb-4" style={{ background: '#0d6efd' }}>
-                <div className="container">
-                    <span className="navbar-brand mb-0 h1">Tablón de Empleo · Empleador</span>
-                    <div>
-                        <button className="btn btn-light btn-sm me-2" onClick={() => navigate('/mapa')}>
-                            Publicar oferta en el mapa
+            <nav className="tw-bg-gradient-to-r tw-from-blue-900 tw-to-indigo-700 tw-text-white tw-shadow-lg">
+                <div className="tw-mx-auto tw-flex tw-max-w-7xl tw-flex-wrap tw-items-center tw-justify-between tw-gap-4 tw-px-5 tw-py-4">
+                    <div className="tw-flex tw-items-center tw-gap-3">
+                        <span className="tw-flex tw-h-11 tw-w-11 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-white/15">
+                            <i className="bi bi-building tw-text-xl" aria-hidden="true" />
+                        </span>
+                        <div>
+                            <p className="tw-m-0 tw-text-lg tw-font-bold">Mano Experta</p>
+                            <p className="tw-m-0 tw-text-sm tw-text-blue-100">Panel de empleador</p>
+                        </div>
+                    </div>
+                    <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+                        <button
+                            className="tw-rounded-xl tw-bg-white tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-blue-800 tw-transition hover:tw-bg-blue-50"
+                            onClick={() => navigate('/mapa')}
+                        >
+                            <i className="bi bi-plus-circle tw-mr-2" aria-hidden="true" />
+                            Publicar oferta
                         </button>
-                        <button className="btn btn-outline-light btn-sm" onClick={salir}>Salir</button>
+                        <SelectorModo />
                     </div>
                 </div>
             </nav>
 
-            <div className="container pb-5">
-                <div className="row g-4">
+            <main className="tw-mx-auto tw-max-w-7xl tw-px-5 tw-py-8 md:tw-py-10">
+                <header className="tw-mb-8">
+                    <p className="tw-mb-2 tw-text-sm tw-font-bold tw-uppercase tw-tracking-[0.18em] tw-text-blue-700">
+                        Encontrá el talento que buscás
+                    </p>
+                    <h1 className="tw-mb-2 tw-text-3xl tw-font-extrabold tw-tracking-tight tw-text-slate-900 md:tw-text-4xl">
+                        Gestión de postulaciones
+                    </h1>
+                    <p className="tw-m-0 tw-max-w-2xl tw-text-slate-500">
+                        Revisá tus avisos publicados y conocé a las personas interesadas en cada oportunidad.
+                    </p>
+                </header>
 
-                    {/* ── LISTADO DE OFERTAS ─────────────────────────────── */}
-                    <div className="col-lg-4">
-                        <div className="card">
-                            <div className="card-header bg-primary text-white">
-                                Mis ofertas publicadas
+                <div className="tw-grid tw-grid-cols-1 tw-items-start tw-gap-6 lg:tw-grid-cols-5">
+                    <aside className="tw-overflow-hidden tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm lg:tw-col-span-2">
+                        <div className="tw-border-b tw-border-slate-100 tw-p-6">
+                            <div className="tw-flex tw-items-center tw-justify-between tw-gap-3">
+                                <div>
+                                    <h2 className="tw-m-0 tw-text-lg tw-font-bold tw-text-slate-900">Mis ofertas</h2>
+                                    <p className="tw-m-0 tw-mt-1 tw-text-sm tw-text-slate-500">{ofertas.length} publicadas</p>
+                                </div>
+                                <span className="tw-flex tw-h-10 tw-w-10 tw-items-center tw-justify-center tw-rounded-xl tw-bg-blue-50 tw-text-blue-700">
+                                    <i className="bi bi-briefcase tw-text-lg" aria-hidden="true" />
+                                </span>
                             </div>
+                        </div>
 
-                            {/* Filtro */}
-                            <div className="card-body p-3 pb-2">
-                                <select
-                                    className="form-select form-select-sm"
-                                    value={filtroModalidad}
-                                    onChange={e => setFiltroModalidad(e.target.value)}
-                                >
-                                    <option value="">Todas las modalidades</option>
-                                    <option value="Presencial">Presencial</option>
-                                    <option value="Remoto">Remoto</option>
-                                    <option value="Híbrido">Híbrido</option>
-                                </select>
-                            </div>
-
-                            {/* Lista */}
-                            <div
-                                className="list-group list-group-flush"
-                                style={{ maxHeight: 520, overflowY: 'auto' }}
+                        <div className="tw-p-4">
+                            <label className="tw-mb-2 tw-block tw-text-xs tw-font-bold tw-uppercase tw-tracking-wider tw-text-slate-500" htmlFor="filtro-modalidad">
+                                Filtrar por modalidad
+                            </label>
+                            <select
+                                id="filtro-modalidad"
+                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-700 tw-outline-none focus:tw-border-blue-500 focus:tw-ring-4 focus:tw-ring-blue-100"
+                                value={filtroModalidad}
+                                onChange={e => setFiltroModalidad(e.target.value)}
                             >
-                                {ofertas.length === 0 && (
-                                    <p className="text-muted p-3 mb-0">
-                                        No hay ofertas publicadas todavía.
-                                    </p>
-                                )}
-                                {ofertas.map(o => (
-                                    <div
+                                <option value="">Todas las modalidades</option>
+                                <option value="Presencial">Presencial</option>
+                                <option value="Remoto">Remoto</option>
+                                <option value="Híbrido">Híbrido</option>
+                            </select>
+                        </div>
+
+                        <div className="tw-max-h-[520px] tw-space-y-2 tw-overflow-y-auto tw-px-3 tw-pb-4">
+                            {ofertas.length === 0 && (
+                                <div className="tw-rounded-2xl tw-bg-slate-50 tw-px-5 tw-py-8 tw-text-center">
+                                    <i className="bi bi-briefcase tw-text-3xl tw-text-slate-300" aria-hidden="true" />
+                                    <p className="tw-mb-0 tw-mt-3 tw-text-sm tw-text-slate-500">No hay ofertas publicadas todavía.</p>
+                                </div>
+                            )}
+                            {ofertas.map(o => {
+                                const activa = ofertaActiva?.id === o.id;
+                                return (
+                                    <button
                                         key={o.id}
-                                        className="list-group-item"
+                                        type="button"
+                                        className={`tw-w-full tw-rounded-2xl tw-border tw-p-4 tw-text-left tw-transition ${
+                                            activa
+                                                ? 'tw-border-blue-200 tw-bg-blue-50 tw-shadow-sm'
+                                                : 'tw-border-slate-100 tw-bg-white hover:tw-border-blue-100 hover:tw-bg-slate-50'
+                                        }`}
                                         onClick={() => seleccionarOferta(o)}
-                                        style={{
-                                            cursor: 'pointer',
-                                            borderLeft: ofertaActiva?.id === o.id
-                                                ? '4px solid #0d6efd'
-                                                : '4px solid transparent',
-                                            background: ofertaActiva?.id === o.id ? '#e7f1ff' : 'white',
-                                            transition: 'background 0.15s'
-                                        }}
+                                        aria-pressed={activa}
                                     >
-                                        <div className="d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <h6 className="mb-1">{o.puesto}</h6>
-                                                <p className="text-muted mb-0 small">{o.empresa}</p>
+                                        <div className="tw-flex tw-items-start tw-justify-between tw-gap-3">
+                                            <div className="tw-min-w-0">
+                                                <h3 className="tw-m-0 tw-truncate tw-text-sm tw-font-bold tw-text-slate-900">{o.puesto}</h3>
+                                                <p className="tw-mb-0 tw-mt-1 tw-text-sm tw-text-slate-500">{o.empresa}</p>
                                             </div>
                                             <span
-                                                className="badge"
+                                                className="tw-shrink-0 tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white"
                                                 style={{ background: BADGE_MODALIDAD[o.modalidad] ?? '#6c757d' }}
                                             >
                                                 {o.modalidad}
                                             </span>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    </button>
+                                );
+                            })}
                         </div>
-                    </div>
+                    </aside>
 
-                    {/* ── POSTULANTES ────────────────────────────────────── */}
-                    <div className="col-lg-8">
-                        <div className="card">
-                            <div className="card-header bg-secondary text-white">
-                                {ofertaActiva
-                                    ? `Postulantes a: ${ofertaActiva.puesto}`
-                                    : 'Seleccioná una oferta para ver sus postulantes'}
-                            </div>
-                            <div className="card-body">
-
-                                {!ofertaActiva && (
-                                    <p className="text-muted">
-                                        Elegí una oferta de la lista de la izquierda.
+                    <section className="tw-overflow-hidden tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm lg:tw-col-span-3">
+                        <div className="tw-border-b tw-border-slate-100 tw-p-6">
+                            <div className="tw-flex tw-items-center tw-gap-3">
+                                <span className="tw-flex tw-h-10 tw-w-10 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-xl tw-bg-indigo-50 tw-text-indigo-700">
+                                    <i className="bi bi-people tw-text-lg" aria-hidden="true" />
+                                </span>
+                                <div className="tw-min-w-0">
+                                    <h2 className="tw-m-0 tw-text-lg tw-font-bold tw-text-slate-900">
+                                        {ofertaActiva ? `Postulantes a: ${ofertaActiva.puesto}` : 'Postulantes'}
+                                    </h2>
+                                    <p className="tw-m-0 tw-mt-1 tw-text-sm tw-text-slate-500">
+                                        {ofertaActiva ? 'Personas interesadas en esta oportunidad' : 'Seleccioná una oferta para ver las postulaciones'}
                                     </p>
-                                )}
-
-                                {cargandoPostulantes && (
-                                    <p className="text-muted">Cargando postulantes...</p>
-                                )}
-
-                                {ofertaActiva && !cargandoPostulantes && postulantes.length === 0 && (
-                                    <p className="text-muted">Todavía nadie se postuló a esta oferta.</p>
-                                )}
-
-                                {postulantes.map(p => (
-                                    <div
-                                        key={p.id}
-                                        className="card mb-3"
-                                        style={{ borderLeft: '4px solid #0d6efd' }}
-                                    >
-                                        <div className="card-body">
-                                            <div className="d-flex justify-content-between align-items-start mb-2">
-                                                <div>
-                                                    <h6 className="mb-1">{p.Perfil.nombre_apellido}</h6>
-                                                    <p className="text-muted mb-0 small">{p.Perfil.domicilio}</p>
-                                                </div>
-                                                <span
-                                                    className="badge"
-                                                    style={{ background: ESTADO_COLORES[p.estado] ?? '#6c757d' }}
-                                                >
-                                                    {p.estado}
-                                                </span>
-                                            </div>
-                                            <button
-                                                className="btn btn-sm btn-outline-primary"
-                                                onClick={() => setDetallePostulacion(p)}
-                                            >
-                                                Ver más detalles
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-
+                                </div>
                             </div>
                         </div>
-                    </div>
-
+                        <div className="tw-space-y-3 tw-p-5 md:tw-p-6">
+                            {!ofertaActiva && (
+                                <div className="tw-rounded-2xl tw-bg-slate-50 tw-px-5 tw-py-10 tw-text-center">
+                                    <i className="bi bi-arrow-left-circle tw-text-3xl tw-text-slate-300" aria-hidden="true" />
+                                    <p className="tw-mb-0 tw-mt-3 tw-text-sm tw-text-slate-500">Elegí una oferta de la lista para revisar sus postulantes.</p>
+                                </div>
+                            )}
+                            {cargandoPostulantes && (
+                                <div className="tw-flex tw-items-center tw-justify-center tw-gap-3 tw-py-10 tw-text-sm tw-text-slate-500">
+                                    <span className="tw-h-5 tw-w-5 tw-animate-spin tw-rounded-full tw-border-2 tw-border-blue-600 tw-border-t-transparent" />
+                                    Cargando postulantes...
+                                </div>
+                            )}
+                            {ofertaActiva && !cargandoPostulantes && postulantes.length === 0 && (
+                                <div className="tw-rounded-2xl tw-bg-slate-50 tw-px-5 tw-py-10 tw-text-center">
+                                    <i className="bi bi-inbox tw-text-3xl tw-text-slate-300" aria-hidden="true" />
+                                    <p className="tw-mb-0 tw-mt-3 tw-text-sm tw-text-slate-500">Todavía nadie se postuló a esta oferta.</p>
+                                </div>
+                            )}
+                            {postulantes.map(p => (
+                                <article
+                                    key={p.id}
+                                    className="tw-rounded-2xl tw-border tw-border-slate-200 tw-border-l-4 tw-bg-white tw-p-5 tw-transition hover:tw-shadow-sm"
+                                    style={{ borderLeftColor: '#0d6efd' }}
+                                >
+                                    <div className="tw-flex tw-flex-wrap tw-items-start tw-justify-between tw-gap-3">
+                                        <div className="tw-flex tw-items-center tw-gap-3">
+                                            <span className="tw-flex tw-h-11 tw-w-11 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-full tw-bg-blue-50 tw-font-bold tw-text-blue-700">
+                                                {p.Perfil.nombre_apellido?.charAt(0)?.toUpperCase()}
+                                            </span>
+                                            <div>
+                                                <h3 className="tw-m-0 tw-text-sm tw-font-bold tw-text-slate-900">{p.Perfil.nombre_apellido}</h3>
+                                                <p className="tw-mb-0 tw-mt-1 tw-text-sm tw-text-slate-500">
+                                                    <i className="bi bi-geo-alt tw-mr-1" aria-hidden="true" />
+                                                    {p.Perfil.domicilio}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span
+                                            className="tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white"
+                                            style={{ background: ESTADO_COLORES[p.estado] ?? '#6c757d' }}
+                                        >
+                                            {p.estado}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className="tw-w-full tw-rounded-xl tw-border tw-border-blue-200 tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-blue-700 tw-transition hover:tw-bg-blue-50 sm:tw-w-auto"
+                                            onClick={() => setDetallePostulacion(p)}
+                                        >
+                                            <i className="bi bi-person-vcard tw-mr-2" aria-hidden="true" />
+                                            Ver perfil completo
+                                        </button>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
                 </div>
-            </div>
+            </main>
 
             {/* ── MODAL DE DETALLE ───────────────────────────────────────── */}
             {detallePostulacion && (
                 <div
-                    style={{
-                        position: 'fixed', inset: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        zIndex: 1050
-                    }}
+                    className="tw-fixed tw-inset-0 tw-z-[1050] tw-flex tw-items-center tw-justify-center tw-bg-slate-950/60 tw-p-4 tw-backdrop-blur-sm"
                     onClick={e => { if (e.target === e.currentTarget) setDetallePostulacion(null); }}
                 >
-                    <div className="card" style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}>
-
-                        <div
-                            className="card-header d-flex justify-content-between align-items-center text-white"
-                            style={{ background: '#0d6efd' }}
-                        >
-                            <h5 className="mb-0">Detalle del postulante</h5>
+                    <div className="tw-max-h-[90vh] tw-w-full tw-max-w-xl tw-overflow-y-auto tw-rounded-3xl tw-bg-white tw-shadow-2xl">
+                        <div className="tw-flex tw-items-center tw-justify-between tw-bg-gradient-to-r tw-from-blue-800 tw-to-indigo-700 tw-px-6 tw-py-5 tw-text-white">
+                            <div>
+                                <p className="tw-m-0 tw-text-sm tw-font-semibold tw-text-blue-100">Perfil del candidato</p>
+                                <h2 className="tw-m-0 tw-mt-1 tw-text-xl tw-font-bold">Detalle del postulante</h2>
+                            </div>
                             <button
-                                className="btn-close btn-close-white"
+                                type="button"
+                                className="tw-flex tw-h-9 tw-w-9 tw-items-center tw-justify-center tw-rounded-full tw-bg-white/15 tw-text-xl tw-text-white tw-transition hover:tw-bg-white/25"
                                 onClick={() => setDetallePostulacion(null)}
-                            />
+                                aria-label="Cerrar detalle"
+                            >
+                                <i className="bi bi-x-lg" aria-hidden="true" />
+                            </button>
                         </div>
 
-                        <div className="card-body">
-                            <h4>{detallePostulacion.Perfil.nombre_apellido}</h4>
-                            <p className="text-muted mb-3">
-                                Nacimiento:{' '}
-                                {new Date(detallePostulacion.Perfil.fecha_nacimiento + 'T00:00:00')
-                                    .toLocaleDateString('es-AR')}
-                                {' · '}
-                                {detallePostulacion.Perfil.domicilio}
-                            </p>
+                        <div className="tw-space-y-5 tw-p-6">
+                            <div>
+                                <h3 className="tw-m-0 tw-text-2xl tw-font-extrabold tw-text-slate-900">{detallePostulacion.Perfil.nombre_apellido}</h3>
+                                <p className="tw-mb-0 tw-mt-2 tw-text-sm tw-text-slate-500">
+                                    <i className="bi bi-calendar3 tw-mr-1" aria-hidden="true" />
+                                    {new Date(detallePostulacion.Perfil.fecha_nacimiento + 'T00:00:00').toLocaleDateString('es-AR')}
+                                    <span className="tw-mx-2">·</span>
+                                    <i className="bi bi-geo-alt tw-mr-1" aria-hidden="true" />
+                                    {detallePostulacion.Perfil.domicilio}
+                                </p>
+                            </div>
 
-                            <h6>Aptitudes</h6>
-                            <p>{detallePostulacion.Perfil.aptitudes}</p>
+                            <div className="tw-rounded-2xl tw-bg-slate-50 tw-p-4">
+                                <h4 className="tw-mb-2 tw-text-sm tw-font-bold tw-text-slate-800">Aptitudes</h4>
+                                <p className="tw-m-0 tw-whitespace-pre-wrap tw-break-words tw-text-sm tw-leading-6 tw-text-slate-600">
+                                    {detallePostulacion.Perfil.aptitudes || 'El postulante todavía no cargó sus aptitudes.'}
+                                </p>
+                            </div>
 
-                            <h6>Experiencias</h6>
-                            <p>{detallePostulacion.Perfil.experiencias}</p>
+                            <div className="tw-rounded-2xl tw-bg-slate-50 tw-p-4">
+                                <h4 className="tw-mb-2 tw-text-sm tw-font-bold tw-text-slate-800">Experiencias</h4>
+                                <p className="tw-m-0 tw-whitespace-pre-wrap tw-break-words tw-text-sm tw-leading-6 tw-text-slate-600">
+                                    {detallePostulacion.Perfil.experiencias || 'El postulante todavía no cargó sus experiencias.'}
+                                </p>
+                            </div>
 
-                            <hr />
-
-                            <div className="mb-3">
-                                <label className="form-label">Estado de la postulación</label>
+                            <div>
+                                <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">Estado de la postulación</label>
                                 <select
-                                    className="form-select"
+                                    className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-4 tw-py-3 tw-text-slate-700 tw-outline-none focus:tw-border-blue-500 focus:tw-ring-4 focus:tw-ring-blue-100"
                                     value={detallePostulacion.estado}
                                     onChange={e => cambiarEstado(detallePostulacion.id, e.target.value)}
                                 >
@@ -277,7 +325,8 @@ export default function EmpleadorPage() {
                                 </select>
                             </div>
 
-                            <div className="alert alert-light border small mb-0">
+                            <div className="tw-rounded-xl tw-border tw-border-amber-200 tw-bg-amber-50 tw-p-4 tw-text-sm tw-text-amber-800">
+                                <i className="bi bi-info-circle tw-mr-2" aria-hidden="true" />
                                 La descarga del CV en Word o PDF se habilita en una próxima entrega.
                             </div>
                         </div>

@@ -1,10 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSesion } from './context/SesionContext';
+import { useSesion } from './context/sesionContext';
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import MapaPage from './pages/MapaPage';
-import CVPage from './pages/CVPage';
-import EmpleadorPage from './pages/EmpleadorPage';
+import LoginPage from './pages/loginPage';
+import RegistroPage from './pages/RegistroPage';
+import MapaPage from './pages/mapaPage';
+import CVPage from './pages/CVpage';
+import EmpleadorPage from './pages/empleadorPage';
 
 function RutaProtegida({ children, rolRequerido }) {
   const { rol } = useSesion();
@@ -22,6 +23,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/registro" element={<RegistroPage />} />
 
       <Route
         path="/mapa"
