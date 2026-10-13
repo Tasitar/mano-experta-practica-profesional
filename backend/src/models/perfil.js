@@ -42,6 +42,10 @@ const Perfil = sequelize.define('Perfil', {
         type: DataTypes.STRING(255),
         allowNull: false
     },
+    telefono: {
+        type: DataTypes.STRING(30),
+        allowNull: true
+    },
     aptitudes: {
         type: DataTypes.TEXT,
         allowNull: false

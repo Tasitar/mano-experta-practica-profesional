@@ -35,6 +35,12 @@ const crearPerfilValidation = [
         .notEmpty().withMessage('El domicilio es obligatorio')
         .isLength({ max: 255 }).withMessage('Máximo 255 caracteres'),
 
+    body('telefono')
+        .optional({ checkFalsy: true })
+        .isString().withMessage('El teléfono debe ser texto')
+        .trim()
+        .isLength({ max: 30 }).withMessage('El teléfono no puede superar los 30 caracteres'),
+
     body('aptitudes')
         .trim()
         .notEmpty().withMessage('Las aptitudes son obligatorias'),
@@ -58,6 +64,12 @@ const editarPerfilValidation = [
         .optional()
         .trim()
         .isLength({ max: 255 }).withMessage('Máximo 255 caracteres'),
+
+    body('telefono')
+        .optional({ checkFalsy: true })
+        .isString().withMessage('El teléfono debe ser texto')
+        .trim()
+        .isLength({ max: 30 }).withMessage('El teléfono no puede superar los 30 caracteres'),
 
     body('aptitudes')
         .optional()
