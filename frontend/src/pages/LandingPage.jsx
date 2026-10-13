@@ -38,7 +38,7 @@ export default function LandingPage() {
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-white border-bottom py-3">
+      <nav className="navbar navbar-expand-lg landing-navbar border-bottom py-3">
         <div className="container">
           <button className="navbar-brand border-0 bg-transparent" onClick={() => navigate('/')}>
             <img
@@ -91,7 +91,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-5 bg-light">
+      <section className="py-5 landing-section">
         <div className="container">
           <p className="text-center text-muted mb-5 fs-4">
             Hoy hay <strong>3.898</strong> empresas contratando con las mejores
@@ -118,7 +118,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-5 bg-white">
+      <section className="py-5 landing-section">
         <div className="container">
           <h2 className="fw-bold text-primary text-center mb-5">
             Conoce todas las herramientas que ofrecemos
@@ -140,7 +140,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="bg-primary text-white text-center p-2">
+      <footer className="landing-footer text-white text-center p-2">
         <p className="mb-0">© Todos los derechos reservados. Mano Experta</p>
       </footer>
     </>

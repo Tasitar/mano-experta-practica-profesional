@@ -28,7 +28,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-vh-100 d-flex align-items-center" style={{ background: '#f4f4f4' }}>
+        <div className="min-vh-100 d-flex align-items-center" style={{ background: '#f5efe6' }}>
             <div className="container">
                 <h1 className="text-center mb-2">Tablón de Empleo</h1>
                 <p className="text-center text-muted mb-4">Ingresá con tu correo y contraseña</p>

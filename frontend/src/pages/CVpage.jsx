@@ -21,9 +21,10 @@ export default function CVPage() {
     const [toast,         setToast]         = useState('');
     const [error,         setError]         = useState('');
     const [guardando,     setGuardando]     = useState(false);
+    const [eliminandoPostulacion, setEliminandoPostulacion] = useState(null);
     const [form, setForm] = useState({
         nombre_apellido: '', fecha_nacimiento: '',
-        domicilio: '', aptitudes: '', experiencias: ''
+        domicilio: '', telefono: '', aptitudes: '', experiencias: ''
     });
 
     useEffect(() => {
@@ -35,6 +36,7 @@ export default function CVPage() {
                         nombre_apellido: r.data.nombre_apellido || '',
                         fecha_nacimiento: r.data.fecha_nacimiento || '',
                         domicilio: r.data.domicilio || '',
+                        telefono: r.data.telefono || '',
                         aptitudes: r.data.aptitudes || '',
                         experiencias: r.data.experiencias || ''
                     });
@@ -55,6 +57,7 @@ export default function CVPage() {
         try {
             const { data } = perfil
                 ? await PerfilesService.editar(perfil.id, {
+                    telefono: form.telefono,
                     aptitudes: form.aptitudes,
                     experiencias: form.experiencias
                 })
@@ -67,6 +70,22 @@ export default function CVPage() {
             setError(errores ? errores.map(e => e.msg).join(', ') : (err.response?.data?.error || 'No se pudo guardar tu CV.'));
         } finally {
             setGuardando(false);
+        }
+    };
+
+    const eliminarPostulacion = async (postulacion) => {
+        if (!window.confirm(`¿Querés borrar tu postulación a "${postulacion.Oferta?.puesto || 'esta oferta'}"?`)) return;
+
+        setError('');
+        setEliminandoPostulacion(postulacion.id);
+        try {
+            await PostulacionesService.eliminar(postulacion.id, perfilId);
+            setPostulaciones(actuales => actuales.filter(item => item.id !== postulacion.id));
+            mostrarToast('Postulación eliminada.');
+        } catch (err) {
+            setError(err.response?.data?.error || 'No se pudo eliminar la postulación.');
+        } finally {
+            setEliminandoPostulacion(null);
         }
     };
 
@@ -160,6 +179,19 @@ export default function CVPage() {
                                                     required />
                                             </div>
                                         ))}
+                                        <div className="tw-mb-5">
+                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto (opcional)</label>
+                                            <input
+                                                id="telefono"
+                                                type="tel"
+                                                maxLength={30}
+                                                autoComplete="tel"
+                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                placeholder="Ej: +54 9 370 400-0000"
+                                                value={form.telefono}
+                                                onChange={e => setForm({ ...form, telefono: e.target.value })}
+                                            />
+                                        </div>
 
                                         {[
                                             { label: 'Aptitudes', key: 'aptitudes', placeholder: 'Ej: manejo de Excel, atención al público...' },
@@ -202,6 +234,9 @@ export default function CVPage() {
                                                 <span className="tw-mx-2">·</span>
                                                 <i className="bi bi-calendar3 tw-mr-1" aria-hidden="true" />
                                                 {new Date(perfil.fecha_nacimiento + 'T00:00:00').toLocaleDateString('es-AR')}
+                                                <span className="tw-mx-2">·</span>
+                                                <i className="bi bi-telephone tw-mr-1" aria-hidden="true" />
+                                                {perfil.telefono || 'Teléfono no informado'}
                                             </p>
                                         </div>
                                     </div>
@@ -212,6 +247,19 @@ export default function CVPage() {
                                         Los empleadores verán esta información cuando te postules a una oferta.
                                     </p>
                                     <form onSubmit={handleSubmit}>
+                                        <div className="tw-mb-5">
+                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto (opcional)</label>
+                                            <input
+                                                id="telefono"
+                                                type="tel"
+                                                maxLength={30}
+                                                autoComplete="tel"
+                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                placeholder="Ej: +54 9 370 400-0000"
+                                                value={form.telefono}
+                                                onChange={e => setForm({ ...form, telefono: e.target.value })}
+                                            />
+                                        </div>
                                         <div className="tw-mb-5">
                                             <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="aptitudes">Aptitudes</label>
                                             <textarea
@@ -280,9 +328,20 @@ export default function CVPage() {
                                                     {p.Oferta?.empresa || 'Empresa no disponible'} <span className="tw-mx-1">·</span> {p.Oferta?.modalidad || 'Modalidad no disponible'}
                                                     </p>
                                             </div>
-                                            <span className="tw-shrink-0 tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white" style={{ background: ESTADO_COLORES[p.estado] ?? '#6c757d' }}>
-                                                {p.estado}
-                                            </span>
+                                            <div className="tw-flex tw-shrink-0 tw-flex-col tw-items-end tw-gap-2">
+                                                <span className="tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white" style={{ background: ESTADO_COLORES[p.estado] ?? '#6c757d' }}>
+                                                    {p.estado}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="tw-rounded-lg tw-border tw-border-red-200 tw-px-2.5 tw-py-1.5 tw-text-xs tw-font-semibold tw-text-red-700 tw-transition hover:tw-bg-red-50 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
+                                                    onClick={() => eliminarPostulacion(p)}
+                                                    disabled={eliminandoPostulacion === p.id}
+                                                >
+                                                    <i className={`bi ${eliminandoPostulacion === p.id ? 'bi-hourglass-split' : 'bi-trash'} tw-mr-1`} aria-hidden="true" />
+                                                    {eliminandoPostulacion === p.id ? 'Eliminando...' : 'Eliminar'}
+                                                </button>
+                                            </div>
                                         </div>
                                     </article>
                                 ))}

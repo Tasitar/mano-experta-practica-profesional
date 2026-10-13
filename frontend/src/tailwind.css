@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+    background-color: #f5efe6;
+}
+
+.tw-bg-slate-50,
+.bg-light {
+    background-color: #f7f1e8 !important;
+}
+
+.tw-bg-white,
+.bg-white,
+.card {
+    background-color: #fffaf2 !important;
+}
+
+.tw-border-slate-200,
+.tw-border-slate-100,
+.border-bottom {
+    border-color: #e9ddcc !important;
+}
+
+.form-control,
+.form-select,
+.tw-bg-slate-50 {
+    background-color: #fcf8f1;
+}
+
+.landing-navbar {
+    background-color: #fffaf2 !important;
+}
+
+.landing-footer {
+    background-color: #7b452d;
+}

@@ -42,7 +42,7 @@ export default function RegistroPage() {
     };
 
     return (
-        <div className="min-vh-100 py-5" style={{ background: '#f4f4f4' }}>
+        <div className="min-vh-100 py-5" style={{ background: '#f5efe6' }}>
             <main className="container">
                 <div className="card shadow-sm mx-auto" style={{ maxWidth: 720 }}>
                     <div className="card-body p-4 p-md-5">

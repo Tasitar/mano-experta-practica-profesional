@@ -24,7 +24,7 @@ export default function SelectorModo({ fondoClaro = false }) {
                     aria-pressed={rol === 'empleado'}
                     onClick={() => cambiarModo('empleado')}
                 >
-                    Modo empleado
+                    Buscar oportunidades
                 </button>
                 <button
                     type="button"
@@ -32,7 +32,7 @@ export default function SelectorModo({ fondoClaro = false }) {
                     aria-pressed={rol === 'empleador'}
                     onClick={() => cambiarModo('empleador')}
                 >
-                    Modo empleador
+                    Busco contratar
                 </button>
             </div>
             <button

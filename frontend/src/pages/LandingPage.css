@@ -4,13 +4,18 @@
   align-items: center;
   justify-content: center;
   background:
-    linear-gradient(rgba(8, 31, 63, 0.45), rgba(8, 31, 63, 0.55)),
+    linear-gradient(rgba(79, 43, 29, 0.48), rgba(79, 43, 29, 0.58)),
     url('../Formosa.jpg') center / cover,
-    #1a428a;
+    #8a5438;
+}
+
+.landing-section {
+  background-color: #f7f1e8;
 }
 
 .landing-card {
   border-radius: 20px;
+  background-color: #fffaf2;
   transition: transform 0.3s ease;
 }
 
