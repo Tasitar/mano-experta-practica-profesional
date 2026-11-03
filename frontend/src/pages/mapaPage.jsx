@@ -12,6 +12,42 @@ const COLORES = {
     'Híbrido':  '#fd7e14'
 };
 
+const normalizarTexto = texto => texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+function distanciaEdicion(a, b) {
+    let filaAnterior = Array.from({ length: b.length + 1 }, (_, indice) => indice);
+
+    for (let i = 1; i <= a.length; i++) {
+        const filaActual = [i];
+        for (let j = 1; j <= b.length; j++) {
+            filaActual[j] = Math.min(
+                filaActual[j - 1] + 1,
+                filaAnterior[j] + 1,
+                filaAnterior[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+            );
+        }
+        filaAnterior = filaActual;
+    }
+
+    return filaAnterior[b.length];
+}
+
+function descripcionCoincide(descripcion, busqueda) {
+    const terminos = normalizarTexto(busqueda).trim().split(/\s+/).filter(Boolean);
+    if (terminos.length === 0) return true;
+
+    const palabrasDescripcion = normalizarTexto(descripcion || '').split(/[^a-z0-9]+/).filter(Boolean);
+    return terminos.every(termino => palabrasDescripcion.some(palabra => {
+        if (palabra.includes(termino) || termino.includes(palabra)) return true;
+        if (termino.length < 4 || palabra.length < 4) return false;
+        const largoMaximo = Math.max(termino.length, palabra.length);
+        return 1 - distanciaEdicion(termino, palabra) / largoMaximo >= 0.75;
+    }));
+}
+
 // Componente interno para capturar clicks en el mapa
 function ClickHandler({ onMapClick, activo }) {
     useMapEvents({
@@ -46,12 +82,16 @@ export default function MapaPage() {
     const [ofertas, setOfertas]             = useState([]);
     const [coordSeleccionada, setCoord]     = useState(null);
     const [filtroModalidad, setFiltroModalidad] = useState('');
+    const [filtroAmbito, setFiltroAmbito]   = useState('');
+    const [busquedaDescripcion, setBusquedaDescripcion] = useState('');
     const [ofertaSeleccionada, setOfertaSeleccionada] = useState(null);
-    const [form, setForm]                   = useState({ puesto: '', empresa: '', modalidad: 'Presencial', descripcion: '' });
+    const [form, setForm]                   = useState({ puesto: '', empresa: '', modalidad: 'Presencial', ambito: '', duracion: '', descripcion: '' });
     const [toast, setToast]                 = useState('');
 
     const ofertasFiltradas = ofertas.filter(oferta =>
-        !filtroModalidad || oferta.modalidad === filtroModalidad
+        (!filtroModalidad || oferta.modalidad === filtroModalidad) &&
+        (!filtroAmbito || oferta.ambito === filtroAmbito) &&
+        descripcionCoincide(oferta.descripcion, busquedaDescripcion)
     );
     const ofertasEnMapa = esEmpleado ? ofertasFiltradas : ofertas;
 
@@ -83,7 +123,7 @@ export default function MapaPage() {
                 longitud: coordSeleccionada.lng
             });
             setOfertas(prev => [data, ...prev]);
-            setForm({ puesto: '', empresa: '', modalidad: 'Presencial', descripcion: '' });
+            setForm({ puesto: '', empresa: '', modalidad: 'Presencial', ambito: '', duracion: '', descripcion: '' });
             setCoord(null);
             mostrarToast(`✅ Oferta "${data.puesto}" publicada correctamente.`);
         } catch (err) {
@@ -302,6 +342,39 @@ export default function MapaPage() {
                                         />
                                     </div>
                                     <div>
+                                        <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="ambito-oferta">Ámbito</label>
+                                        <select
+                                            id="ambito-oferta"
+                                            className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-4 tw-py-3 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                            value={form.ambito}
+                                            onChange={e => setForm({ ...form, ambito: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Seleccioná un ámbito</option>
+                                            <option>Salud</option>
+                                            <option>Economía</option>
+                                            <option>Jardinería</option>
+                                            <option>Trabajo pesado</option>
+                                            <option>Vigilancia</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="duracion-oferta">Duración del trabajo</label>
+                                        <select
+                                            id="duracion-oferta"
+                                            className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-4 tw-py-3 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                            value={form.duracion}
+                                            onChange={e => setForm({ ...form, duracion: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Seleccioná la duración</option>
+                                            <option>Trabajo de un solo día</option>
+                                            <option>Medio tiempo</option>
+                                            <option>Contrato de temporada</option>
+                                            <option>Contrato por tiempo determinado</option>
+                                        </select>
+                                    </div>
+                                    <div>
                                         <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">Modalidad</label>
                                         <select
                                             className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-4 tw-py-3 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
@@ -361,6 +434,33 @@ export default function MapaPage() {
                                         </div>
                                     </div>
                                     <div className="tw-p-5">
+                                        <div className="tw-mb-4">
+                                            <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="busqueda-descripcion-mapa">Buscador</label>
+                                            <input
+                                                id="busqueda-descripcion-mapa"
+                                                type="search"
+                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-700 tw-outline-none focus:tw-border-blue-500 focus:tw-ring-4 focus:tw-ring-blue-100"
+                                                value={busquedaDescripcion}
+                                                onChange={e => setBusquedaDescripcion(e.target.value)}
+                                                placeholder="Ej. pancho"
+                                            />
+                                        </div>
+                                        <div className="tw-mb-4">
+                                            <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="filtro-ambito-mapa">Ámbito</label>
+                                            <select
+                                                id="filtro-ambito-mapa"
+                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-700 tw-outline-none focus:tw-border-blue-500 focus:tw-ring-4 focus:tw-ring-blue-100"
+                                                value={filtroAmbito}
+                                                onChange={e => setFiltroAmbito(e.target.value)}
+                                            >
+                                                <option value="">Todos los ámbitos</option>
+                                                <option>Salud</option>
+                                                <option>Economía</option>
+                                                <option>Jardinería</option>
+                                                <option>Trabajo pesado</option>
+                                                <option>Vigilancia</option>
+                                            </select>
+                                        </div>
                                         <div>
                                             <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="filtro-modalidad-mapa">Modalidad</label>
                                             <select
