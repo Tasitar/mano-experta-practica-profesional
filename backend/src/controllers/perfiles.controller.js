@@ -66,8 +66,8 @@ const obtener = async (req, res) => {
 
 const crear = async (req, res) => {
     try {
-        const { nombre_apellido, fecha_nacimiento, domicilio, telefono, aptitudes, experiencias } = req.body;
-        const perfil = await Perfil.create({ nombre_apellido, fecha_nacimiento, domicilio, telefono, aptitudes, experiencias });
+        const { nombre_apellido, fecha_nacimiento, domicilio, telefono, aptitudes, experiencias, foto_perfil } = req.body;
+        const perfil = await Perfil.create({ nombre_apellido, fecha_nacimiento, domicilio, telefono, aptitudes, experiencias, foto_perfil });
         res.status(201).json(perfil);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -78,14 +78,15 @@ const editar = async (req, res) => {
     try {
         const perfil = await Perfil.findByPk(req.params.id);
         if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
-        const { nombre_apellido, fecha_nacimiento, domicilio, telefono, aptitudes, experiencias } = req.body;
+        const { nombre_apellido, fecha_nacimiento, domicilio, telefono, aptitudes, experiencias, foto_perfil } = req.body;
         await perfil.update({
             ...(nombre_apellido !== undefined && { nombre_apellido }),
             ...(fecha_nacimiento !== undefined && { fecha_nacimiento }),
             ...(domicilio !== undefined && { domicilio }),
             ...(telefono !== undefined && { telefono }),
             ...(aptitudes !== undefined && { aptitudes }),
-            ...(experiencias !== undefined && { experiencias })
+            ...(experiencias !== undefined && { experiencias }),
+            ...(foto_perfil !== undefined && { foto_perfil })
         });
         res.json(datosPublicos(perfil));
     } catch (error) {

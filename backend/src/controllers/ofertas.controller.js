@@ -42,12 +42,12 @@ const postulantes = async (req, res) => {
 
 const crear = async (req, res) => {
     try {
-        const { puesto, empresa, modalidad, descripcion, latitud, longitud, empleador_id } = req.body;
+        const { puesto, empresa, ambito, duracion, modalidad, descripcion, latitud, longitud, empleador_id } = req.body;
         const empleador = await Perfil.findByPk(empleador_id);
         if (!empleador) return res.status(404).json({ error: 'Perfil de empleador no encontrado' });
 
         const oferta = await Oferta.create({
-            puesto, empresa, modalidad, descripcion, latitud, longitud, empleador_id
+            puesto, empresa, ambito, duracion, modalidad, descripcion, latitud, longitud, empleador_id
         });
         res.status(201).json(oferta);
     } catch (error) {

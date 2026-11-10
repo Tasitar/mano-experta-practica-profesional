@@ -11,7 +11,7 @@ const listar = async (req, res) => {
             where,
             include: [
                 { model: Perfil, attributes: { exclude: ['password_hash'] } },
-                { model: Oferta }
+                { model: Oferta, as: 'Oferta' }
             ],
             order: [['created_at', 'DESC']]
         });

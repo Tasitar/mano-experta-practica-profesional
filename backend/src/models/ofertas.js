@@ -15,6 +15,15 @@ const Oferta = sequelize.define('Oferta', {
         type: DataTypes.STRING(150),
         allowNull: false
     },
+    ambito: {
+        type: DataTypes.ENUM('Salud', 'Economía', 'Jardinería', 'Trabajo pesado', 'Vigilancia', 'Eléctrico', 'Mecánico', 'Gastronómico'),
+        allowNull: false,
+        defaultValue: 'Salud'
+    },
+    duracion: {
+        type: DataTypes.ENUM('Trabajo de un solo día', 'Medio tiempo', 'Contrato de temporada', 'Contrato por tiempo determinado'),
+        allowNull: true
+    },
     modalidad: {
         type: DataTypes.ENUM('Presencial', 'Remoto', 'Híbrido'),
         allowNull: false,

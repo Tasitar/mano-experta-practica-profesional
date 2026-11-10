@@ -11,6 +11,16 @@ const crearOfertaValidation = [
         .notEmpty().withMessage('La empresa es obligatoria')
         .isLength({ max: 150 }).withMessage('Máximo 150 caracteres'),
 
+    body('ambito')
+        .notEmpty().withMessage('El ámbito es obligatorio')
+        .isIn(['Salud', 'Economía', 'Jardinería', 'Trabajo pesado', 'Vigilancia', 'Eléctrico', 'Mecánico', 'Gastronómico'])
+        .withMessage('Ámbito inválido'),
+
+    body('duracion')
+        .notEmpty().withMessage('La duración del trabajo es obligatoria')
+        .isIn(['Trabajo de un solo día', 'Medio tiempo', 'Contrato de temporada', 'Contrato por tiempo determinado'])
+        .withMessage('Duración del trabajo inválida'),
+
     body('empleador_id')
         .notEmpty().withMessage('El perfil del empleador es obligatorio')
         .isInt({ min: 1 }).withMessage('empleador_id debe ser un número entero positivo'),

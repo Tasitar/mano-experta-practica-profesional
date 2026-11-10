@@ -47,7 +47,13 @@ const crearPerfilValidation = [
 
     body('experiencias')
         .trim()
-        .notEmpty().withMessage('Las experiencias son obligatorias')
+        .notEmpty().withMessage('Las experiencias son obligatorias'),
+
+    body('foto_perfil')
+        .optional({ nullable: true })
+        .isString().withMessage('La foto de perfil debe ser una imagen válida')
+        .isLength({ max: 700000 }).withMessage('La foto de perfil es demasiado grande')
+        .matches(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/).withMessage('La foto de perfil debe estar en formato JPEG')
 ];
 
 const editarPerfilValidation = [
@@ -81,7 +87,13 @@ const editarPerfilValidation = [
         .optional()
         .isString().withMessage('Las experiencias deben ser texto')
         .trim()
-        .notEmpty().withMessage('Las experiencias son obligatorias')
+        .notEmpty().withMessage('Las experiencias son obligatorias'),
+
+    body('foto_perfil')
+        .optional({ nullable: true })
+        .isString().withMessage('La foto de perfil debe ser una imagen válida')
+        .isLength({ max: 700000 }).withMessage('La foto de perfil es demasiado grande')
+        .matches(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/).withMessage('La foto de perfil debe estar en formato JPEG')
 ];
 
 export { autenticacionValidation, registroValidation, crearPerfilValidation, editarPerfilValidation };

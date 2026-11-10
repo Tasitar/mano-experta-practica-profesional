@@ -53,6 +53,10 @@ const Perfil = sequelize.define('Perfil', {
     experiencias: {
         type: DataTypes.TEXT,
         allowNull: false
+    },
+    foto_perfil: {
+        type: DataTypes.TEXT('long'),
+        allowNull: true
     }
 }, {
     tableName: 'perfiles'
