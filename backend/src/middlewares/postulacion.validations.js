@@ -13,8 +13,8 @@ const crearPostulacionValidation = [
 const cambiarEstadoValidation = [
     body('estado')
         .notEmpty().withMessage('El estado es obligatorio')
-        .isIn(['Pendiente', 'Visto', 'Contactado', 'Rechazado'])
-        .withMessage('Estado inválido. Opciones: Pendiente, Visto, Contactado, Rechazado'),
+        .isIn(['Pendiente', 'Visto', 'Aceptado', 'Rechazado'])
+        .withMessage('Estado inválido. Opciones: Pendiente, Visto, Aceptado, Rechazado'),
 
     body('nota_rechazo')
         .optional({ nullable: true })

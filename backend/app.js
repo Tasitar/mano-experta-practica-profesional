@@ -29,6 +29,9 @@ async function iniciar() {
 
         await sequelize.sync({ alter: true });
         console.log(' Modelos sincronizados con la base de datos.');
+        await sequelize.query(
+            "UPDATE postulaciones SET estado = 'Aceptado' WHERE estado = 'Contactado'"
+        );
 
         app.listen(PORT, () => {
             console.log(` Servidor corriendo en http://localhost:${PORT}`);

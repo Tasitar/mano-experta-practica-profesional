@@ -7,7 +7,7 @@ import SelectorModo from '../components/SelectorModo';
 const ESTADO_COLORES = {
     Pendiente:  '#6c757d',
     Visto:      '#0d6efd',
-    Contactado: '#198754',
+    Aceptado:   '#198754',
     Rechazado:  '#dc3545'
 };
 

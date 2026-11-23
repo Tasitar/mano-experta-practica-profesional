@@ -8,7 +8,7 @@ const Postulacion = sequelize.define('Postulacion', {
         autoIncrement: true
     },
     estado: {
-        type: DataTypes.ENUM('Pendiente', 'Visto', 'Contactado', 'Rechazado'),
+        type: DataTypes.ENUM('Pendiente', 'Visto', 'Aceptado', 'Rechazado'),
         allowNull: false,
         defaultValue: 'Pendiente'
     },

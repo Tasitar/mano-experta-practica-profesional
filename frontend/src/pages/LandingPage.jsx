@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSesion } from '../context/sesionContext';
 import SelectorModo from '../components/SelectorModo';
+import { OfertasService, PostulacionesService } from '../services/api';
 import './LandingPage.css';
 import logo from '../team-work-logo-design-template-free-vector.jpg';
 
@@ -34,7 +36,120 @@ const herramientas = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { rol } = useSesion();
+  const { rol, perfilId } = useSesion();
+  const [bandejaAbierta, setBandejaAbierta] = useState(false);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [cargandoNotificaciones, setCargandoNotificaciones] = useState(false);
+
+  const claveVistas = rol && perfilId ? `mano_experta_notificaciones_vistas_${rol}_${perfilId}` : null;
+
+  const obtenerVistas = () => {
+    if (!claveVistas) return [];
+    try {
+      return JSON.parse(localStorage.getItem(claveVistas) || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    if (!rol || !perfilId) {
+      setNotificaciones([]);
+      return;
+    }
+
+    let activo = true;
+
+    const cargarNotificaciones = async () => {
+      setCargandoNotificaciones(true);
+      try {
+        if (rol === 'empleador') {
+          const { data: ofertas } = await OfertasService.listar('', perfilId);
+          const resultados = await Promise.all(
+            ofertas.map(async oferta => {
+              const { data: postulantes } = await OfertasService.postulantes(oferta.id);
+              return postulantes.map(postulacion => ({
+                id: `postulacion-${postulacion.id}`,
+                titulo: postulacion.Perfil?.nombre_apellido || 'Nuevo postulante',
+                texto: `Se postuló a ${oferta.puesto}`,
+                fecha: postulacion.created_at,
+                nueva: postulacion.estado === 'Pendiente',
+                tipo: 'postulacion'
+              }));
+            })
+          );
+
+          if (activo) {
+            const vistas = obtenerVistas();
+            setNotificaciones(resultados.flat()
+              .map(notificacion => ({
+                ...notificacion,
+                nueva: notificacion.nueva && !vistas.includes(notificacion.id)
+              }))
+              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha)));
+          }
+        } else {
+          const { data: postulaciones } = await PostulacionesService.porPerfil(perfilId);
+          if (activo) {
+            const vistas = obtenerVistas();
+            setNotificaciones(postulaciones
+              .filter(postulacion => postulacion.estado !== 'Pendiente')
+              .map(postulacion => ({
+                id: `estado-${postulacion.id}`,
+                titulo: postulacion.Oferta?.puesto || 'Tu postulación',
+                texto: postulacion.estado === 'Aceptado'
+                  ? 'El empleador te aceptó'
+                  : postulacion.estado === 'Rechazado'
+                    ? 'Tu postulación fue rechazada'
+                    : 'El empleador vio tu postulación',
+                fecha: postulacion.updated_at,
+                nueva: postulacion.estado === 'Aceptado',
+                tipo: postulacion.estado === 'Rechazado' ? 'rechazo' : 'estado'
+              }))
+              .map(notificacion => ({
+                ...notificacion,
+                nueva: notificacion.nueva && !vistas.includes(notificacion.id)
+              }))
+              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha)));
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        if (activo) setNotificaciones([]);
+      } finally {
+        if (activo) setCargandoNotificaciones(false);
+      }
+    };
+
+    cargarNotificaciones();
+    return () => {
+      activo = false;
+    };
+  }, [rol, perfilId]);
+
+  const contadorNuevas = notificaciones.filter(notificacion => notificacion.nueva).length;
+
+  const abrirBandeja = () => {
+    setBandejaAbierta(actual => {
+      const vaAabrirse = !actual;
+      if (vaAabrirse && claveVistas) {
+        const vistas = obtenerVistas();
+        const ids = notificaciones.map(notificacion => notificacion.id);
+        localStorage.setItem(claveVistas, JSON.stringify([...new Set([...vistas, ...ids])]));
+        setNotificaciones(actuales => actuales.map(notificacion => ({ ...notificacion, nueva: false })));
+      }
+      return vaAabrirse;
+    });
+  };
+
+  const abrirNotificacion = (notificacion) => {
+    setBandejaAbierta(false);
+    if (rol === 'empleador') {
+      navigate('/empleador');
+    } else {
+      navigate('/cv');
+    }
+  };
 
   return (
     <>
@@ -54,6 +169,59 @@ export default function LandingPage() {
           <div className="landing-actions ms-auto d-flex align-items-center">
             {rol ? <>
               <SelectorModo fondoClaro mostrarInicio={false} mostrarSalir={false} />
+              <div className="landing-inbox position-relative">
+                <button
+                  type="button"
+                  className="landing-inbox-button"
+                  aria-label="Abrir bandeja de entrada"
+                  aria-expanded={bandejaAbierta}
+                  onClick={abrirBandeja}
+                >
+                  <i className="bi bi-bell-fill" aria-hidden="true" />
+                  {contadorNuevas > 0 && (
+                    <span className="landing-inbox-count">{contadorNuevas}</span>
+                  )}
+                </button>
+                {bandejaAbierta && (
+                  <div className="landing-inbox-panel">
+                    <div className="landing-inbox-header">
+                      <div>
+                        <span>Bandeja de entrada</span>
+                        <small>{notificaciones.length} {notificaciones.length === 1 ? 'notificación' : 'notificaciones'}</small>
+                      </div>
+                      {contadorNuevas > 0 && (
+                        <span className="landing-inbox-total">{contadorNuevas} nueva{contadorNuevas === 1 ? '' : 's'}</span>
+                      )}
+                    </div>
+                    <div className="landing-inbox-list">
+                      {cargandoNotificaciones ? (
+                        <div className="landing-inbox-empty">Cargando notificaciones...</div>
+                      ) : notificaciones.length === 0 ? (
+                        <div className="landing-inbox-empty">
+                          <i className="bi bi-bell-slash" aria-hidden="true" />
+                          <p>No tenés notificaciones.</p>
+                        </div>
+                      ) : notificaciones.map(notificacion => (
+                        <button
+                          type="button"
+                          className={`landing-inbox-item ${notificacion.nueva ? 'is-new' : ''}`}
+                          key={notificacion.id}
+                          onClick={() => abrirNotificacion(notificacion)}
+                        >
+                          <span className={`landing-inbox-icon ${notificacion.tipo}`}>
+                            <i className={`bi ${notificacion.tipo === 'rechazo' ? 'bi-x-lg' : notificacion.tipo === 'postulacion' ? 'bi-person-plus-fill' : 'bi-briefcase-fill'}`} aria-hidden="true" />
+                          </span>
+                          <span className="landing-inbox-copy">
+                            <strong>{notificacion.titulo}</strong>
+                            <span>{notificacion.texto}</span>
+                          </span>
+                          {notificacion.nueva && <span className="landing-inbox-dot" aria-label="Nueva" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </> : <>
             <button
               className="btn landing-login rounded-pill px-4 me-2"
@@ -87,7 +255,7 @@ export default function LandingPage() {
             </p>
             <button
               className="btn hero-button"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(rol === 'empleador' ? '/empleador' : rol === 'empleado' ? '/cv' : '/login')}
             >
               Comenzar
               <i className="bi bi-arrow-right" aria-hidden="true" />
