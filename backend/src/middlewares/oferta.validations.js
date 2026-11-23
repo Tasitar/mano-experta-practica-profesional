@@ -7,8 +7,8 @@ const crearOfertaValidation = [
         .isLength({ max: 150 }).withMessage('Máximo 150 caracteres'),
 
     body('empresa')
+        .optional({ values: 'falsy' })
         .trim()
-        .notEmpty().withMessage('La empresa es obligatoria')
         .isLength({ max: 150 }).withMessage('Máximo 150 caracteres'),
 
     body('ambito')

@@ -11,6 +11,73 @@ const ESTADO_COLORES = {
     Rechazado:  '#dc3545'
 };
 
+const procesarFotoPerfil = async (archivo) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type)) {
+        throw new Error('Elegí una imagen JPG, PNG o WebP.');
+    }
+    if (archivo.size > 5 * 1024 * 1024) {
+        throw new Error('La imagen no puede superar los 5 MB.');
+    }
+
+    let imagen;
+    try {
+        imagen = await createImageBitmap(archivo);
+    } catch {
+        throw new Error('No se pudo leer la imagen seleccionada.');
+    }
+
+    const ladoMaximo = 400;
+    const escala = Math.min(1, ladoMaximo / Math.max(imagen.width, imagen.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(imagen.width * escala);
+    canvas.height = Math.round(imagen.height * escala);
+    const contexto = canvas.getContext('2d');
+    if (!contexto) {
+        imagen.close();
+        throw new Error('No se pudo procesar la imagen seleccionada.');
+    }
+
+    contexto.drawImage(imagen, 0, 0, canvas.width, canvas.height);
+    imagen.close();
+    const foto = canvas.toDataURL('image/jpeg', 0.75);
+    if (foto.length > 700_000) {
+        throw new Error('La imagen procesada es demasiado grande. Elegí otra foto.');
+    }
+    return foto;
+};
+
+const SelectorFotoPerfil = ({ foto, onChange, onEliminar }) => (
+    <div className="tw-mb-4">
+        <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">
+            Foto de perfil
+        </label>
+        <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-3">
+            <span className="tw-flex tw-h-16 tw-w-16 tw-shrink-0 tw-items-center tw-justify-center tw-overflow-hidden tw-rounded-full tw-bg-emerald-50 tw-text-2xl tw-font-bold tw-text-emerald-700">
+                {foto
+                    ? <img src={foto} alt="Vista previa de la foto de perfil" className="tw-h-full tw-w-full tw-object-cover" />
+                    : <i className="bi bi-person" aria-hidden="true" />}
+            </span>
+            {!foto && (
+                <div className="tw-min-w-0 tw-flex-1">
+                    <input
+                        id="foto-perfil"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={onChange}
+                        className="tw-block tw-w-full tw-text-sm tw-text-slate-600 file:tw-mr-3 file:tw-rounded-lg file:tw-border-0 file:tw-bg-emerald-50 file:tw-px-3 file:tw-py-2 file:tw-font-semibold file:tw-text-emerald-800 hover:file:tw-bg-emerald-100"
+                    />
+                    <p className="tw-mb-0 tw-mt-1 tw-text-xs tw-text-slate-500">JPG, PNG o WebP; máximo 5 MB.</p>
+                </div>
+            )}
+            {foto && (
+                <button type="button" className="tw-rounded-lg tw-px-2 tw-py-1 tw-text-sm tw-font-semibold tw-text-red-700 hover:tw-bg-red-50" onClick={onEliminar}>
+                    Quitar
+                </button>
+            )}
+        </div>
+    </div>
+);
+
 export default function CVPage() {
     const { perfilId, guardarPerfilId } = useSesion();
     const navigate = useNavigate();
@@ -24,7 +91,7 @@ export default function CVPage() {
     const [eliminandoPostulacion, setEliminandoPostulacion] = useState(null);
     const [form, setForm] = useState({
         nombre_apellido: '', fecha_nacimiento: '',
-        domicilio: '', telefono: '', aptitudes: '', experiencias: ''
+        domicilio: '', telefono: '', aptitudes: '', experiencias: '', foto_perfil: null
     });
 
     useEffect(() => {
@@ -38,7 +105,8 @@ export default function CVPage() {
                         domicilio: r.data.domicilio || '',
                         telefono: r.data.telefono || '',
                         aptitudes: r.data.aptitudes || '',
-                        experiencias: r.data.experiencias || ''
+                        experiencias: r.data.experiencias || '',
+                        foto_perfil: r.data.foto_perfil || null
                     });
                     return PostulacionesService.porPerfil(perfilId);
                 })
@@ -59,7 +127,8 @@ export default function CVPage() {
                 ? await PerfilesService.editar(perfil.id, {
                     telefono: form.telefono,
                     aptitudes: form.aptitudes,
-                    experiencias: form.experiencias
+                    experiencias: form.experiencias,
+                    foto_perfil: form.foto_perfil
                 })
                 : await PerfilesService.crear(form);
             if (!perfil) guardarPerfilId(data.id);
@@ -70,6 +139,20 @@ export default function CVPage() {
             setError(errores ? errores.map(e => e.msg).join(', ') : (err.response?.data?.error || 'No se pudo guardar tu CV.'));
         } finally {
             setGuardando(false);
+        }
+    };
+
+    const cambiarFotoPerfil = async (e) => {
+        const archivo = e.target.files?.[0];
+        e.target.value = '';
+        if (!archivo) return;
+
+        setError('');
+        try {
+            const foto_perfil = await procesarFotoPerfil(archivo);
+            setForm(actual => ({ ...actual, foto_perfil }));
+        } catch (err) {
+            setError(err.message || 'No se pudo procesar la imagen seleccionada.');
         }
     };
 
@@ -129,8 +212,8 @@ export default function CVPage() {
                 </div>
             </nav>
 
-            <main className="tw-mx-auto tw-max-w-7xl tw-px-5 tw-py-8 md:tw-py-10">
-                <header className="tw-mb-8">
+            <main className="tw-mx-auto tw-max-w-6xl tw-px-5 tw-py-7 md:tw-py-8">
+                <header className="tw-mb-6">
                     <p className="tw-mb-2 tw-text-sm tw-font-bold tw-uppercase tw-tracking-[0.18em] tw-text-emerald-700">
                         Tu próxima oportunidad empieza acá
                     </p>
@@ -142,8 +225,8 @@ export default function CVPage() {
                     </p>
                 </header>
 
-                <div className="tw-grid tw-grid-cols-1 tw-items-start tw-gap-6 lg:tw-grid-cols-5">
-                    <section className="tw-space-y-5 lg:tw-col-span-3">
+                <div className="tw-grid tw-grid-cols-1 tw-items-start tw-gap-5 lg:tw-grid-cols-5">
+                    <section className="tw-space-y-4 lg:tw-col-span-3">
                         {error && (
                             <div className="tw-rounded-2xl tw-border tw-border-red-200 tw-bg-red-50 tw-p-4 tw-text-sm tw-font-medium tw-text-red-700" role="alert">
                                 <i className="bi bi-exclamation-circle tw-mr-2" aria-hidden="true" />
@@ -151,42 +234,47 @@ export default function CVPage() {
                             </div>
                         )}
                         {!perfil ? (
-                            <div className="tw-overflow-hidden tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm">
-                                <div className="tw-border-b tw-border-slate-100 tw-p-6 md:tw-p-7">
-                                    <div className="tw-mb-2 tw-flex tw-items-center tw-gap-3">
-                                        <span className="tw-flex tw-h-10 tw-w-10 tw-items-center tw-justify-center tw-rounded-xl tw-bg-emerald-100 tw-text-emerald-700">
+                            <div className="tw-overflow-hidden tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm">
+                                <div className="tw-border-b tw-border-slate-100 tw-p-5">
+                                    <div className="tw-flex tw-items-center tw-gap-3">
+                                        <span className="tw-flex tw-h-9 tw-w-9 tw-items-center tw-justify-center tw-rounded-xl tw-bg-emerald-100 tw-text-emerald-700">
                                             <i className="bi bi-file-earmark-person tw-text-xl" aria-hidden="true" />
                                         </span>
                                         <div>
-                                            <h2 className="tw-m-0 tw-text-xl tw-font-bold tw-text-slate-900">Completá tu CV</h2>
+                                            <h2 className="tw-m-0 tw-text-lg tw-font-bold tw-text-slate-900">Completá tu CV</h2>
                                             <p className="tw-m-0 tw-mt-1 tw-text-sm tw-text-slate-500">Los campos son necesarios para crear tu perfil.</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="tw-p-6 md:tw-p-7">
+                                <div className="tw-p-5">
                                     <form onSubmit={handleSubmit}>
+                                        <SelectorFotoPerfil
+                                            foto={form.foto_perfil}
+                                            onChange={cambiarFotoPerfil}
+                                            onEliminar={() => setForm(actual => ({ ...actual, foto_perfil: null }))}
+                                        />
                                         {[
                                             { label: 'Nombre y apellido', key: 'nombre_apellido', type: 'text' },
                                             { label: 'Fecha de nacimiento', key: 'fecha_nacimiento', type: 'date' },
                                             { label: 'Dónde te alojás', key: 'domicilio', type: 'text', placeholder: 'Barrio, ciudad' }
                                         ].map(({ label, key, type, placeholder }) => (
-                                            <div className="tw-mb-5" key={key}>
-                                                <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">{label}</label>
-                                                <input type={type} className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                            <div className="tw-mb-4" key={key}>
+                                                <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">{label}</label>
+                                                <input type={type} className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
                                                     placeholder={placeholder}
                                                     value={form[key]}
                                                     onChange={e => setForm({ ...form, [key]: e.target.value })}
                                                     required />
                                             </div>
                                         ))}
-                                        <div className="tw-mb-5">
-                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto (opcional)</label>
+                                        <div className="tw-mb-4">
+                                            <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto</label>
                                             <input
                                                 id="telefono"
                                                 type="tel"
                                                 maxLength={30}
                                                 autoComplete="tel"
-                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
                                                 placeholder="Ej: +54 9 370 400-0000"
                                                 value={form.telefono}
                                                 onChange={e => setForm({ ...form, telefono: e.target.value })}
@@ -195,11 +283,11 @@ export default function CVPage() {
 
                                         {[
                                             { label: 'Aptitudes', key: 'aptitudes', placeholder: 'Ej: manejo de Excel, atención al público...' },
-                                            { label: 'Experiencias', key: 'experiencias', placeholder: 'Contá tus trabajos anteriores', rows: 4 }
+                                            { label: 'Experiencias', key: 'experiencias', placeholder: 'Contá tus trabajos anteriores', rows: 3 }
                                         ].map(({ label, key, placeholder, rows = 3 }) => (
-                                            <div className="tw-mb-5" key={key}>
-                                                <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">{label}</label>
-                                                <textarea className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100" rows={rows}
+                                            <div className="tw-mb-4" key={key}>
+                                                <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">{label}</label>
+                                                <textarea className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100" rows={rows}
                                                     placeholder={placeholder}
                                                     value={form[key]}
                                                     onChange={e => setForm({ ...form, [key]: e.target.value })}
@@ -209,7 +297,7 @@ export default function CVPage() {
 
                                         <button
                                             type="submit"
-                                            className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 tw-rounded-xl tw-bg-emerald-700 tw-px-5 tw-py-3 tw-font-bold tw-text-white tw-transition hover:tw-bg-emerald-800 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
+                                            className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 tw-rounded-xl tw-bg-emerald-700 tw-px-4 tw-py-2.5 tw-text-sm tw-font-bold tw-text-white tw-transition hover:tw-bg-emerald-800 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
                                             disabled={guardando}
                                         >
                                             <i className={`bi ${guardando ? 'bi-hourglass-split' : 'bi-check2-circle'}`} aria-hidden="true" />
@@ -219,15 +307,17 @@ export default function CVPage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="tw-overflow-hidden tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm">
-                                <div className="tw-bg-gradient-to-br tw-from-emerald-700 tw-to-teal-600 tw-p-6 tw-text-white md:tw-p-8">
-                                    <div className="tw-flex tw-items-center tw-gap-4">
-                                        <span className="tw-flex tw-h-16 tw-w-16 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-white/15 tw-text-2xl tw-font-extrabold">
-                                            {perfil.nombre_apellido?.charAt(0)?.toUpperCase()}
+                            <div className="tw-overflow-hidden tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm">
+                                <div className="tw-bg-gradient-to-br tw-from-emerald-700 tw-to-teal-600 tw-p-5 tw-text-white">
+                                    <div className="tw-flex tw-items-center tw-gap-3">
+                                        <span className="tw-flex tw-h-14 tw-w-14 tw-shrink-0 tw-items-center tw-justify-center tw-overflow-hidden tw-rounded-full tw-bg-white/15 tw-text-xl tw-font-extrabold">
+                                            {perfil.foto_perfil
+                                                ? <img src={perfil.foto_perfil} alt={`Foto de ${perfil.nombre_apellido}`} className="tw-h-full tw-w-full tw-object-cover" />
+                                                : perfil.nombre_apellido?.charAt(0)?.toUpperCase()}
                                         </span>
                                         <div>
                                             <p className="tw-mb-1 tw-text-sm tw-font-semibold tw-text-emerald-100">Mi perfil profesional</p>
-                                            <h2 className="tw-m-0 tw-text-2xl tw-font-extrabold">{perfil.nombre_apellido}</h2>
+                                            <h2 className="tw-m-0 tw-text-xl tw-font-extrabold">{perfil.nombre_apellido}</h2>
                                             <p className="tw-mb-0 tw-mt-2 tw-text-sm tw-text-emerald-50">
                                                 <i className="bi bi-geo-alt tw-mr-1" aria-hidden="true" />
                                                 {perfil.domicilio}
@@ -241,43 +331,48 @@ export default function CVPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="tw-p-6 md:tw-p-8">
-                                    <p className="tw-mb-6 tw-rounded-xl tw-bg-emerald-50 tw-p-4 tw-text-sm tw-leading-6 tw-text-emerald-900">
+                                <div className="tw-p-5">
+                                    <p className="tw-mb-4 tw-rounded-xl tw-bg-emerald-50 tw-p-3 tw-text-sm tw-leading-5 tw-text-emerald-900">
                                         <i className="bi bi-info-circle tw-mr-2" aria-hidden="true" />
                                         Los empleadores verán esta información cuando te postules a una oferta.
                                     </p>
                                     <form onSubmit={handleSubmit}>
-                                        <div className="tw-mb-5">
-                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto (opcional)</label>
+                                        <SelectorFotoPerfil
+                                            foto={form.foto_perfil}
+                                            onChange={cambiarFotoPerfil}
+                                            onEliminar={() => setForm(actual => ({ ...actual, foto_perfil: null }))}
+                                        />
+                                        <div className="tw-mb-4">
+                                            <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto</label>
                                             <input
                                                 id="telefono"
                                                 type="tel"
                                                 maxLength={30}
                                                 autoComplete="tel"
-                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
                                                 placeholder="Ej: +54 9 370 400-0000"
                                                 value={form.telefono}
                                                 onChange={e => setForm({ ...form, telefono: e.target.value })}
                                             />
                                         </div>
-                                        <div className="tw-mb-5">
-                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="aptitudes">Aptitudes</label>
+                                        <div className="tw-mb-4">
+                                            <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="aptitudes">Aptitudes</label>
                                             <textarea
                                                 id="aptitudes"
-                                                className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
-                                                rows={4}
+                                                className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                rows={3}
                                                 placeholder="Ej: manejo de Excel, atención al público..."
                                                 value={form.aptitudes}
                                                 onChange={e => setForm({ ...form, aptitudes: e.target.value })}
                                                 required
                                             />
                                         </div>
-                                        <div className="tw-mb-5">
-                                            <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="experiencias">Experiencias</label>
+                                        <div className="tw-mb-4">
+                                            <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="experiencias">Experiencias</label>
                                             <textarea
                                                 id="experiencias"
-                                                className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-4 tw-py-3 tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
-                                                rows={5}
+                                                className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                rows={3}
                                                 placeholder="Contá tus trabajos anteriores, tareas realizadas y logros."
                                                 value={form.experiencias}
                                                 onChange={e => setForm({ ...form, experiencias: e.target.value })}
@@ -286,7 +381,7 @@ export default function CVPage() {
                                         </div>
                                         <button
                                             type="submit"
-                                            className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 tw-rounded-xl tw-bg-emerald-700 tw-px-5 tw-py-3 tw-font-bold tw-text-white tw-transition hover:tw-bg-emerald-800 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
+                                            className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 tw-rounded-xl tw-bg-emerald-700 tw-px-4 tw-py-2.5 tw-text-sm tw-font-bold tw-text-white tw-transition hover:tw-bg-emerald-800 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
                                             disabled={guardando}
                                         >
                                             <i className={`bi ${guardando ? 'bi-hourglass-split' : 'bi-check2-circle'}`} aria-hidden="true" />
@@ -326,7 +421,7 @@ export default function CVPage() {
                                                 <h3 className="tw-m-0 tw-truncate tw-text-sm tw-font-bold tw-text-slate-900">{p.Oferta?.puesto || 'Oferta no disponible'}</h3>
                                                 <p className="tw-mb-0 tw-mt-1 tw-text-xs tw-text-slate-500">
                                                     {p.Oferta?.empresa || 'Empresa no disponible'} <span className="tw-mx-1">·</span> {p.Oferta?.modalidad || 'Modalidad no disponible'}
-                                                    </p>
+                                                </p>
                                             </div>
                                             <div className="tw-flex tw-shrink-0 tw-flex-col tw-items-end tw-gap-2">
                                                 <span className="tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white" style={{ background: ESTADO_COLORES[p.estado] ?? '#6c757d' }}>
@@ -343,6 +438,12 @@ export default function CVPage() {
                                                 </button>
                                             </div>
                                         </div>
+                                        {p.estado === 'Rechazado' && p.nota_rechazo && (
+                                            <div className="tw-mt-3 tw-rounded-xl tw-bg-red-50 tw-p-3">
+                                                <p className="tw-mb-1 tw-text-xs tw-font-bold tw-text-red-800">Nota del empleador</p>
+                                                <p className="tw-m-0 tw-whitespace-pre-wrap tw-break-words tw-text-sm tw-text-red-700">{p.nota_rechazo}</p>
+                                            </div>
+                                        )}
                                     </article>
                                 ))}
                         </div>

@@ -14,7 +14,12 @@ const cambiarEstadoValidation = [
     body('estado')
         .notEmpty().withMessage('El estado es obligatorio')
         .isIn(['Pendiente', 'Visto', 'Contactado', 'Rechazado'])
-        .withMessage('Estado inválido. Opciones: Pendiente, Visto, Contactado, Rechazado')
+        .withMessage('Estado inválido. Opciones: Pendiente, Visto, Contactado, Rechazado'),
+
+    body('nota_rechazo')
+        .optional({ nullable: true })
+        .isString().withMessage('La nota de rechazo debe ser texto')
+        .isLength({ max: 2000 }).withMessage('La nota de rechazo no puede superar los 2000 caracteres')
 ];
 
 export { crearPostulacionValidation, cambiarEstadoValidation };

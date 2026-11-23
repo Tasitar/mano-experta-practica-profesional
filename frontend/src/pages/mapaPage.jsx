@@ -269,7 +269,7 @@ export default function MapaPage() {
                                                     <div className="tw-min-w-[200px] tw-p-1">
                                                         <p className="tw-m-0 tw-text-base tw-font-bold tw-text-slate-900">{o.puesto}</p>
                                                         <p className="tw-mb-1 tw-mt-2 tw-text-sm tw-text-slate-600">
-                                                            <i className="bi bi-building tw-mr-1" aria-hidden="true" />{o.empresa}
+                                                            <i className="bi bi-building tw-mr-1" aria-hidden="true" />{o.empresa || 'Empresa no informada'}
                                                         </p>
                                                         <p className="tw-mb-2 tw-mt-0 tw-text-sm tw-leading-5 tw-text-slate-600">
                                                             <i className="bi bi-card-text tw-mr-1" aria-hidden="true" />{o.descripcion}
@@ -294,15 +294,6 @@ export default function MapaPage() {
                                     );
                                 })}
                             </MapContainer>
-                        </div>
-                        <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-x-5 tw-gap-y-2 tw-border-t tw-border-slate-100 tw-px-5 tw-py-3 md:tw-px-6">
-                            <span className="tw-text-xs tw-font-bold tw-uppercase tw-tracking-wide tw-text-slate-400">Modalidad</span>
-                            {Object.entries(COLORES).map(([modalidad, color]) => (
-                                <span key={modalidad} className="tw-inline-flex tw-items-center tw-gap-2 tw-text-xs tw-font-medium tw-text-slate-600">
-                                    <span className="tw-h-2.5 tw-w-2.5 tw-rounded-full" style={{ background: color }} />
-                                    {modalidad}
-                                </span>
-                            ))}
                         </div>
                     </section>
 
@@ -332,13 +323,12 @@ export default function MapaPage() {
                                         />
                                     </div>
                                     <div>
-                                        <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">Empresa</label>
+                                        <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700">Empresa (opcional)</label>
                                         <input
                                             className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-4 tw-py-3 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
                                             value={form.empresa}
                                             onChange={e => setForm({ ...form, empresa: e.target.value })}
                                             placeholder="Nombre de la empresa"
-                                            required
                                         />
                                     </div>
                                     <div>
@@ -356,6 +346,9 @@ export default function MapaPage() {
                                             <option>Jardinería</option>
                                             <option>Trabajo pesado</option>
                                             <option>Vigilancia</option>
+                                            <option>Eléctrico</option>
+                                            <option>Mecánico</option>
+                                            <option>Gastronómico</option>
                                         </select>
                                     </div>
                                     <div>
@@ -459,6 +452,9 @@ export default function MapaPage() {
                                                 <option>Jardinería</option>
                                                 <option>Trabajo pesado</option>
                                                 <option>Vigilancia</option>
+                                                <option>Eléctrico</option>
+                                                <option>Mecánico</option>
+                                                <option>Gastronómico</option>
                                             </select>
                                         </div>
                                         <div>
@@ -491,7 +487,7 @@ export default function MapaPage() {
                                                 >
                                                     <p className="tw-m-0 tw-text-base tw-font-bold tw-text-slate-900">{oferta.puesto}</p>
                                                     <p className="tw-mb-1 tw-mt-2 tw-text-sm tw-text-slate-600">
-                                                        <i className="bi bi-building tw-mr-1" aria-hidden="true" />{oferta.empresa}
+                                                        <i className="bi bi-building tw-mr-1" aria-hidden="true" />{oferta.empresa || 'Empresa no informada'}
                                                     </p>
                                                     <p className="tw-mb-2 tw-mt-0 tw-whitespace-pre-wrap tw-break-words tw-text-sm tw-leading-5 tw-text-slate-600">
                                                         <i className="bi bi-card-text tw-mr-1" aria-hidden="true" />{oferta.descripcion}

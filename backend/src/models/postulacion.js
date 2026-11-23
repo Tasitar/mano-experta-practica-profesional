@@ -11,6 +11,10 @@ const Postulacion = sequelize.define('Postulacion', {
         type: DataTypes.ENUM('Pendiente', 'Visto', 'Contactado', 'Rechazado'),
         allowNull: false,
         defaultValue: 'Pendiente'
+    },
+    nota_rechazo: {
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
     tableName: 'postulaciones',

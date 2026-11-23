@@ -47,7 +47,15 @@ const crear = async (req, res) => {
         if (!empleador) return res.status(404).json({ error: 'Perfil de empleador no encontrado' });
 
         const oferta = await Oferta.create({
-            puesto, empresa, ambito, duracion, modalidad, descripcion, latitud, longitud, empleador_id
+            puesto,
+            empresa: empresa?.trim() || null,
+            ambito,
+            duracion,
+            modalidad,
+            descripcion,
+            latitud,
+            longitud,
+            empleador_id
         });
         res.status(201).json(oferta);
     } catch (error) {

@@ -42,7 +42,11 @@ const cambiarEstado = async (req, res) => {
         const postulacion = await Postulacion.findByPk(req.params.id);
         if (!postulacion) return res.status(404).json({ error: 'Postulación no encontrada' });
 
-        await postulacion.update({ estado: req.body.estado });
+        const { estado, nota_rechazo } = req.body;
+        await postulacion.update({
+            estado,
+            nota_rechazo: estado === 'Rechazado' ? (nota_rechazo?.trim() || null) : null
+        });
         res.json(postulacion);
     } catch (error) {
         res.status(500).json({ error: error.message });

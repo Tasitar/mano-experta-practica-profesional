@@ -33,6 +33,9 @@ const descargarCvPdf = async (perfil) => {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
     pdf.text('Currículum Vitae', 20, 33);
+    if (perfil.foto_perfil) {
+        pdf.addImage(perfil.foto_perfil, 'JPEG', 168, 7, 30, 30);
+    }
     pdf.setTextColor(45, 55, 72);
     pdf.setFontSize(10);
     pdf.text(`Fecha de nacimiento: ${perfil.fecha_nacimiento ? new Date(`${perfil.fecha_nacimiento}T00:00:00`).toLocaleDateString('es-AR') : 'No informada'}`, 20, y);
@@ -90,6 +93,8 @@ export default function EmpleadorPage() {
     const [cargandoPostulantes, setCargandoPostulantes] = useState(false);
     const [detallePostulacion,  setDetallePostulacion]  = useState(null);
     const [eliminandoOferta, setEliminandoOferta] = useState(null);
+    const [notaRechazo, setNotaRechazo] = useState('');
+    const [guardandoEstado, setGuardandoEstado] = useState(false);
 
     // ─── Cargar ofertas ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -129,18 +134,23 @@ export default function EmpleadorPage() {
     };
 
     // ─── Cambiar estado de una postulación ───────────────────────────────────
-    const cambiarEstado = async (postulacionId, nuevoEstado) => {
+    const cambiarEstado = async (postulacionId, nuevoEstado, nota = '') => {
+        setGuardandoEstado(true);
         try {
-            await PostulacionesService.cambiarEstado(postulacionId, nuevoEstado);
+            const nota_rechazo = nuevoEstado === 'Rechazado' ? (nota.trim() || null) : null;
+            await PostulacionesService.cambiarEstado(postulacionId, nuevoEstado, nota_rechazo);
             // Refrescar postulantes
             const { data } = await OfertasService.postulantes(ofertaActiva.id);
             setPostulantes(data);
             // Actualizar detalle si está abierto
             if (detallePostulacion?.id === postulacionId) {
-                setDetallePostulacion(prev => ({ ...prev, estado: nuevoEstado }));
+                setDetallePostulacion(prev => ({ ...prev, estado: nuevoEstado, nota_rechazo }));
+                setNotaRechazo(nota_rechazo || '');
             }
         } catch (err) {
-            alert('No se pudo actualizar el estado: ' + err.message);
+            alert('No se pudo actualizar el estado: ' + (err.response?.data?.error || err.message));
+        } finally {
+            setGuardandoEstado(false);
         }
     };
 
@@ -270,7 +280,7 @@ export default function EmpleadorPage() {
                                             <div className="tw-flex tw-items-start tw-justify-between tw-gap-3">
                                                 <div className="tw-min-w-0">
                                                     <h3 className="tw-m-0 tw-truncate tw-text-sm tw-font-bold tw-text-slate-900">{o.puesto}</h3>
-                                                    <p className="tw-mb-0 tw-mt-1 tw-text-sm tw-text-slate-500">{o.empresa}</p>
+                                                    <p className="tw-mb-0 tw-mt-1 tw-text-sm tw-text-slate-500">{o.empresa || 'Empresa no informada'}</p>
                                                 </div>
                                                 <span
                                                     className="tw-shrink-0 tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white"
@@ -339,8 +349,10 @@ export default function EmpleadorPage() {
                                 >
                                     <div className="tw-flex tw-flex-wrap tw-items-start tw-justify-between tw-gap-3">
                                         <div className="tw-flex tw-items-center tw-gap-3">
-                                            <span className="tw-flex tw-h-11 tw-w-11 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-full tw-bg-blue-50 tw-font-bold tw-text-blue-700">
-                                                {p.Perfil.nombre_apellido?.charAt(0)?.toUpperCase()}
+                                            <span className="tw-flex tw-h-11 tw-w-11 tw-shrink-0 tw-items-center tw-justify-center tw-overflow-hidden tw-rounded-full tw-bg-blue-50 tw-font-bold tw-text-blue-700">
+                                                {p.Perfil.foto_perfil
+                                                    ? <img src={p.Perfil.foto_perfil} alt={`Foto de ${p.Perfil.nombre_apellido}`} className="tw-h-full tw-w-full tw-object-cover" />
+                                                    : p.Perfil.nombre_apellido?.charAt(0)?.toUpperCase()}
                                             </span>
                                             <div>
                                                 <h3 className="tw-m-0 tw-text-sm tw-font-bold tw-text-slate-900">{p.Perfil.nombre_apellido}</h3>
@@ -359,7 +371,10 @@ export default function EmpleadorPage() {
                                         <button
                                             type="button"
                                             className="tw-w-full tw-rounded-xl tw-border tw-border-blue-200 tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-blue-700 tw-transition hover:tw-bg-blue-50 sm:tw-w-auto"
-                                            onClick={() => setDetallePostulacion(p)}
+                                            onClick={() => {
+                                                setDetallePostulacion(p);
+                                                setNotaRechazo(p.nota_rechazo || '');
+                                            }}
                                         >
                                             <i className="bi bi-person-vcard tw-mr-2" aria-hidden="true" />
                                             Ver perfil completo
@@ -396,7 +411,14 @@ export default function EmpleadorPage() {
 
                         <div className="tw-space-y-5 tw-p-6">
                             <div>
-                                <h3 className="tw-m-0 tw-text-2xl tw-font-extrabold tw-text-slate-900">{detallePostulacion.Perfil.nombre_apellido}</h3>
+                                <div className="tw-mb-3 tw-flex tw-items-center tw-gap-3">
+                                    <span className="tw-flex tw-h-16 tw-w-16 tw-shrink-0 tw-items-center tw-justify-center tw-overflow-hidden tw-rounded-full tw-bg-blue-50 tw-text-xl tw-font-bold tw-text-blue-700">
+                                        {detallePostulacion.Perfil.foto_perfil
+                                            ? <img src={detallePostulacion.Perfil.foto_perfil} alt={`Foto de ${detallePostulacion.Perfil.nombre_apellido}`} className="tw-h-full tw-w-full tw-object-cover" />
+                                            : detallePostulacion.Perfil.nombre_apellido?.charAt(0)?.toUpperCase()}
+                                    </span>
+                                    <h3 className="tw-m-0 tw-text-2xl tw-font-extrabold tw-text-slate-900">{detallePostulacion.Perfil.nombre_apellido}</h3>
+                                </div>
                                 <p className="tw-mb-0 tw-mt-2 tw-text-sm tw-text-slate-500">
                                     <i className="bi bi-calendar3 tw-mr-1" aria-hidden="true" />
                                     {new Date(detallePostulacion.Perfil.fecha_nacimiento + 'T00:00:00').toLocaleDateString('es-AR')}
@@ -438,7 +460,15 @@ export default function EmpleadorPage() {
                                 <select
                                     className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-4 tw-py-3 tw-text-slate-700 tw-outline-none focus:tw-border-blue-500 focus:tw-ring-4 focus:tw-ring-blue-100"
                                     value={detallePostulacion.estado}
-                                    onChange={e => cambiarEstado(detallePostulacion.id, e.target.value)}
+                                    disabled={guardandoEstado}
+                                    onChange={e => {
+                                        if (e.target.value === 'Rechazado') {
+                                            setNotaRechazo(detallePostulacion.nota_rechazo || '');
+                                            setDetallePostulacion(prev => ({ ...prev, estado: 'Rechazado' }));
+                                        } else {
+                                            cambiarEstado(detallePostulacion.id, e.target.value);
+                                        }
+                                    }}
                                 >
                                     <option value="Pendiente">Pendiente</option>
                                     <option value="Visto">Visto</option>
@@ -446,6 +476,35 @@ export default function EmpleadorPage() {
                                     <option value="Rechazado">Rechazado</option>
                                 </select>
                             </div>
+
+                            {detallePostulacion.estado === 'Rechazado' && (
+                                <div className="tw-rounded-2xl tw-border tw-border-red-100 tw-bg-red-50 tw-p-4">
+                                    <label className="tw-mb-2 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="nota-rechazo">
+                                        Nota para el postulante (opcional)
+                                    </label>
+                                    <textarea
+                                        id="nota-rechazo"
+                                        className="tw-w-full tw-resize-y tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-red-400 focus:tw-ring-4 focus:tw-ring-red-100"
+                                        rows={3}
+                                        maxLength={2000}
+                                        placeholder="Podés contarle brevemente el motivo del rechazo."
+                                        value={notaRechazo}
+                                        disabled={guardandoEstado}
+                                        onChange={e => setNotaRechazo(e.target.value)}
+                                    />
+                                    <div className="tw-mt-3 tw-flex tw-items-center tw-justify-between tw-gap-3">
+                                        <span className="tw-text-xs tw-text-slate-500">{notaRechazo.length}/2000</span>
+                                        <button
+                                            type="button"
+                                            className="tw-rounded-xl tw-bg-red-700 tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-white hover:tw-bg-red-800 disabled:tw-cursor-not-allowed disabled:tw-opacity-60"
+                                            disabled={guardandoEstado}
+                                            onClick={() => cambiarEstado(detallePostulacion.id, 'Rechazado', notaRechazo)}
+                                        >
+                                            {guardandoEstado ? 'Guardando...' : 'Guardar rechazo'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             <button
                                 type="button"

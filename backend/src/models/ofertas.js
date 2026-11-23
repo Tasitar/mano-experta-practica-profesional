@@ -13,7 +13,7 @@ const Oferta = sequelize.define('Oferta', {
     },
     empresa: {
         type: DataTypes.STRING(150),
-        allowNull: false
+        allowNull: true
     },
     ambito: {
         type: DataTypes.ENUM('Salud', 'Economía', 'Jardinería', 'Trabajo pesado', 'Vigilancia', 'Eléctrico', 'Mecánico', 'Gastronómico'),

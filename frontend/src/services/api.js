@@ -30,6 +30,6 @@ export const OfertasService = {
 export const PostulacionesService = {
     porPerfil:     (perfilId)        => api.get('/postulaciones', { params: { perfil_id: perfilId } }),
     crear:         (perfil_id, oferta_id) => api.post('/postulaciones', { perfil_id, oferta_id }),
-    cambiarEstado: (id, estado)      => api.put(`/postulaciones/${id}`, { estado }),
+    cambiarEstado: (id, estado, nota_rechazo = null) => api.put(`/postulaciones/${id}`, { estado, nota_rechazo }),
     eliminar:      (id, perfilId)    => api.delete(`/postulaciones/${id}`, { params: { perfil_id: perfilId } })
 };
