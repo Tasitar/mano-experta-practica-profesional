@@ -164,8 +164,8 @@ export default function MapaPage() {
     };
 
     return (
-        <div className="tw-min-h-screen tw-bg-slate-50 tw-text-slate-800">
-            <nav className="tw-bg-gradient-to-r tw-from-blue-950 tw-via-blue-900 tw-to-indigo-800 tw-text-white tw-shadow-lg">
+        <div className="profile-shell tw-min-h-screen tw-text-slate-800">
+            <nav className="profile-nav tw-text-white">
                 <div className="tw-mx-auto tw-flex tw-max-w-7xl tw-flex-wrap tw-items-center tw-justify-between tw-gap-4 tw-px-5 tw-py-4">
                     <div className="tw-flex tw-items-center tw-gap-3">
                         <span className="tw-flex tw-h-11 tw-w-11 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-white/15">

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-    background-color: #f5efe6;
+    background-color: #f4f7f8;
 }
 
 .tw-bg-slate-50,
@@ -35,4 +35,169 @@ body {
 
 .landing-footer {
     background-color: #7b452d;
+}
+
+/* Shared visual system for profile, employer and map workspaces */
+.profile-shell {
+    background:
+        radial-gradient(circle at top right, rgba(22, 125, 113, 0.10), transparent 380px),
+        #e9eff2;
+}
+
+.profile-nav {
+    position: relative;
+    z-index: 30;
+    background: #16324f;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 28px rgba(22, 50, 79, 0.16);
+}
+
+.profile-nav-action {
+    min-height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 12px;
+    padding: 9px 14px;
+    color: #16324f;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    transition: 0.22s ease;
+}
+
+.profile-nav-action:hover {
+    color: #11675e;
+    background: #ddefea;
+    border-color: #ddefea;
+    transform: translateY(-1px);
+}
+
+.profile-mode-switcher,
+.profile-mode-options {
+    display: flex;
+    align-items: center;
+}
+
+.profile-mode-switcher {
+    gap: 8px;
+}
+
+.profile-mode-options {
+    gap: 3px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.profile-mode-option,
+.profile-mode-logout {
+    min-height: 34px;
+    border: 0;
+    border-radius: 8px;
+    padding: 7px 11px;
+    color: rgba(255, 255, 255, 0.88);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 800;
+    transition: 0.22s ease;
+}
+
+.profile-mode-option.active {
+    color: #16324f;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(5, 20, 35, 0.16);
+}
+
+.profile-mode-option:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.profile-mode-option.active:hover {
+    color: #16324f;
+    background: #ddefea;
+}
+
+.profile-mode-logout {
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    color: #fff;
+    background: transparent;
+}
+
+.profile-mode-logout:hover {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.10);
+}
+
+.profile-mode-switcher-clear .profile-mode-options {
+    border-color: #dbe4e8;
+    background: #f4f7f8;
+}
+
+.profile-mode-switcher-clear .profile-mode-option {
+    color: #16324f;
+}
+
+.profile-mode-switcher-clear .profile-mode-option.active {
+    color: #fff;
+    background: #167d71;
+    box-shadow: 0 4px 12px rgba(22, 125, 113, 0.18);
+}
+
+.profile-mode-switcher-clear .profile-mode-option:hover,
+.profile-mode-switcher-clear .profile-mode-option.active:hover {
+    color: #fff;
+    background: #11675e;
+}
+
+.profile-mode-switcher-clear .profile-mode-logout {
+    border-color: #cbd7df;
+    color: #16324f;
+    background: #fff;
+}
+
+.profile-mode-switcher-clear .profile-mode-logout:hover {
+    border-color: #167d71;
+    color: #167d71;
+    background: #eef7f5;
+}
+
+.profile-shell main > header {
+    padding: 18px 20px;
+    border: 1px solid #e5ebee;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(221, 239, 234, 0.62), rgba(255, 255, 255, 0) 58%);
+}
+
+.profile-shell main > header p:first-child {
+    color: #167d71 !important;
+}
+
+.profile-shell main section.tw-overflow-hidden,
+.profile-shell main aside.tw-overflow-hidden,
+.profile-shell main article.tw-rounded-2xl,
+.profile-shell main article.tw-rounded-3xl {
+    box-shadow: 0 10px 28px rgba(22, 50, 79, 0.06);
+}
+
+@media (max-width: 767.98px) {
+    .profile-mode-switcher {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .profile-mode-options {
+        flex: 1;
+    }
+
+    .profile-mode-option {
+        flex: 1;
+        padding-inline: 6px;
+        font-size: 11px;
+    }
+
+    .profile-nav-action {
+        min-height: 36px;
+    }
 }

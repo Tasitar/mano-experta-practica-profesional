@@ -1,7 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useSesion } from '../context/sesionContext';
 
-export default function SelectorModo({ fondoClaro = false }) {
+export default function SelectorModo({
+    fondoClaro = false,
+    mostrarInicio = true,
+    mostrarSalir = true
+}) {
     const { rol, guardarRol, cerrar } = useSesion();
     const navigate = useNavigate();
 
@@ -10,17 +14,21 @@ export default function SelectorModo({ fondoClaro = false }) {
         navigate(modo === 'empleador' ? '/empleador' : '/cv');
     };
 
+    const irAlInicio = () => {
+        navigate('/');
+    };
+
     const salir = () => {
         cerrar();
         navigate('/');
     };
 
     return (
-        <div className="d-flex align-items-center gap-2">
-            <div className="btn-group btn-group-sm" role="group" aria-label="Elegir modo de uso">
+        <div className={`profile-mode-switcher ${fondoClaro ? 'profile-mode-switcher-clear' : ''}`}>
+            <div className="profile-mode-options" role="group" aria-label="Elegir modo de uso">
                 <button
                     type="button"
-                    className={`btn ${rol === 'empleado' ? 'btn-primary' : fondoClaro ? 'btn-outline-primary' : 'btn-outline-light'}`}
+                    className={`profile-mode-option ${rol === 'empleado' ? 'active' : ''}`}
                     aria-pressed={rol === 'empleado'}
                     onClick={() => cambiarModo('empleado')}
                 >
@@ -28,19 +36,32 @@ export default function SelectorModo({ fondoClaro = false }) {
                 </button>
                 <button
                     type="button"
-                    className={`btn ${rol === 'empleador' ? 'btn-primary' : fondoClaro ? 'btn-outline-primary' : 'btn-outline-light'}`}
+                    className={`profile-mode-option ${rol === 'empleador' ? 'active' : ''}`}
                     aria-pressed={rol === 'empleador'}
                     onClick={() => cambiarModo('empleador')}
                 >
                     Busco contratar
                 </button>
             </div>
-            <button
-                className={`btn ${fondoClaro ? 'btn-outline-primary' : 'btn-outline-light'} btn-sm`}
-                onClick={salir}
-            >
-                Salir
-            </button>
+            {mostrarInicio && (
+                <button
+                    type="button"
+                    className="profile-mode-logout"
+                    onClick={irAlInicio}
+                >
+                    <i className="bi bi-house-door me-1" aria-hidden="true" />
+                    Inicio
+                </button>
+            )}
+            {mostrarSalir && (
+                <button
+                    type="button"
+                    className="profile-mode-logout"
+                    onClick={salir}
+                >
+                    Salir
+                </button>
+            )}
         </div>
     );
 }

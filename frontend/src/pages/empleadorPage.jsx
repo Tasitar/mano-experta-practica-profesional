@@ -183,9 +183,9 @@ export default function EmpleadorPage() {
     };
 
     return (
-        <div className="tw-min-h-screen tw-bg-slate-50 tw-text-slate-800">
+        <div className="profile-shell tw-min-h-screen tw-text-slate-800">
 
-            <nav className="tw-bg-gradient-to-r tw-from-blue-900 tw-to-indigo-700 tw-text-white tw-shadow-lg">
+            <nav className="profile-nav tw-text-white">
                 <div className="tw-mx-auto tw-flex tw-max-w-7xl tw-flex-wrap tw-items-center tw-justify-between tw-gap-4 tw-px-5 tw-py-4">
                     <div className="tw-flex tw-items-center tw-gap-3">
                         <span className="tw-flex tw-h-11 tw-w-11 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-white/15">
@@ -198,7 +198,7 @@ export default function EmpleadorPage() {
                     </div>
                     <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
                         <button
-                            className="tw-rounded-xl tw-bg-white tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-blue-800 tw-transition hover:tw-bg-blue-50"
+                            className="profile-nav-action"
                             onClick={() => navigate('/mapa')}
                         >
                             <i className="bi bi-plus-circle tw-mr-2" aria-hidden="true" />
