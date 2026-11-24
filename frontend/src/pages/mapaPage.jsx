@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, CircleMarker, Circle, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { useSesion } from '../context/sesionContext';
 import { OfertasService, PerfilesService, PostulacionesService } from '../services/api';
 import SelectorModo from '../components/SelectorModo';
@@ -17,35 +17,18 @@ const normalizarTexto = texto => texto
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
-function distanciaEdicion(a, b) {
-    let filaAnterior = Array.from({ length: b.length + 1 }, (_, indice) => indice);
-
-    for (let i = 1; i <= a.length; i++) {
-        const filaActual = [i];
-        for (let j = 1; j <= b.length; j++) {
-            filaActual[j] = Math.min(
-                filaActual[j - 1] + 1,
-                filaAnterior[j] + 1,
-                filaAnterior[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
-            );
-        }
-        filaAnterior = filaActual;
-    }
-
-    return filaAnterior[b.length];
-}
-
-function descripcionCoincide(descripcion, busqueda) {
+function ofertaCoincide(oferta, busqueda) {
     const terminos = normalizarTexto(busqueda).trim().split(/\s+/).filter(Boolean);
     if (terminos.length === 0) return true;
 
-    const palabrasDescripcion = normalizarTexto(descripcion || '').split(/[^a-z0-9]+/).filter(Boolean);
-    return terminos.every(termino => palabrasDescripcion.some(palabra => {
-        if (palabra.includes(termino) || termino.includes(palabra)) return true;
-        if (termino.length < 4 || palabra.length < 4) return false;
-        const largoMaximo = Math.max(termino.length, palabra.length);
-        return 1 - distanciaEdicion(termino, palabra) / largoMaximo >= 0.75;
-    }));
+    const textoOferta = normalizarTexto([
+        oferta.puesto,
+        oferta.empresa,
+        oferta.ambito,
+        oferta.descripcion
+    ].filter(Boolean).join(' '));
+
+    return terminos.every(termino => textoOferta.includes(termino));
 }
 
 // Componente interno para capturar clicks en el mapa
@@ -91,7 +74,7 @@ export default function MapaPage() {
     const ofertasFiltradas = ofertas.filter(oferta =>
         (!filtroModalidad || oferta.modalidad === filtroModalidad) &&
         (!filtroAmbito || oferta.ambito === filtroAmbito) &&
-        descripcionCoincide(oferta.descripcion, busquedaDescripcion)
+        ofertaCoincide(oferta, busquedaDescripcion)
     );
     const ofertasEnMapa = esEmpleado ? ofertasFiltradas : ofertas;
 
@@ -138,6 +121,11 @@ export default function MapaPage() {
             navigate('/cv');
             return;
         }
+        const oferta = ofertas.find(item => item.id === ofertaId);
+        if (oferta?.empleador_id === perfilId || Number(oferta?.empleador_id) === Number(perfilId)) {
+            alert('No podés postularte a una oferta publicada por tu propia cuenta.');
+            return;
+        }
         try {
             const { data: perfil } = await PerfilesService.obtener(perfilId);
             if (!perfil.aptitudes?.trim() || !perfil.experiencias?.trim()) {
@@ -151,6 +139,8 @@ export default function MapaPage() {
         }
         try {
             await PostulacionesService.crear(perfilId, ofertaId);
+            localStorage.setItem('mano_experta_nueva_postulacion', String(Date.now()));
+            window.dispatchEvent(new Event('storage'));
             mostrarToast('✅ Te postulaste correctamente.');
         } catch (err) {
             const msg = err.response?.data?.error || err.message;
@@ -252,14 +242,10 @@ export default function MapaPage() {
                                 )}
 
                                 {ofertasEnMapa.map(o => {
-                                    const color = COLORES[o.modalidad] ?? '#64748b';
+                                    const esOfertaPropia = Number(o.empleador_id) === Number(perfilId);
+                                    const color = esOfertaPropia ? '#facc15' : (COLORES[o.modalidad] ?? '#64748b');
                                     return (
                                         <div key={o.id}>
-                                            <Circle
-                                                center={[parseFloat(o.latitud), parseFloat(o.longitud)]}
-                                                radius={300}
-                                                pathOptions={{ color, fillColor: color, fillOpacity: 0.15, weight: 1.5 }}
-                                            />
                                             <CircleMarker
                                                 center={[parseFloat(o.latitud), parseFloat(o.longitud)]}
                                                 radius={10}
@@ -277,7 +263,7 @@ export default function MapaPage() {
                                                         <span className="tw-inline-flex tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white" style={{ background: color }}>
                                                             {o.modalidad}
                                                         </span>
-                                                        {esEmpleado && (
+                                                        {esEmpleado && Number(o.empleador_id) !== Number(perfilId) && (
                                                             <button
                                                                 type="button"
                                                                 className="tw-mt-3 tw-w-full tw-rounded-lg tw-bg-emerald-700 tw-px-3 tw-py-2 tw-text-sm tw-font-semibold tw-text-white tw-transition hover:tw-bg-emerald-800"
@@ -479,6 +465,7 @@ export default function MapaPage() {
                                             </p>
                                         ) : ofertasFiltradas.map(oferta => {
                                             const color = COLORES[oferta.modalidad] ?? '#64748b';
+                                            const esOfertaPropia = Number(oferta.empleador_id) === Number(perfilId);
                                             return (
                                                 <article
                                                     key={oferta.id}
@@ -495,6 +482,12 @@ export default function MapaPage() {
                                                     <span className="tw-inline-flex tw-rounded-full tw-px-2.5 tw-py-1 tw-text-xs tw-font-bold tw-text-white" style={{ background: color }}>
                                                         {oferta.modalidad}
                                                     </span>
+                                                    {esOfertaPropia ? (
+                                                        <span className="tw-mt-3 tw-flex tw-w-full tw-items-center tw-justify-center tw-rounded-lg tw-bg-amber-100 tw-px-3 tw-py-2 tw-text-sm tw-font-semibold tw-text-amber-800">
+                                                            <i className="bi bi-person-badge tw-mr-2" aria-hidden="true" />
+                                                            Tu oferta
+                                                        </span>
+                                                    ) : (
                                                     <button
                                                         type="button"
                                                         className="tw-mt-3 tw-w-full tw-rounded-lg tw-bg-emerald-700 tw-px-3 tw-py-2 tw-text-sm tw-font-semibold tw-text-white tw-transition hover:tw-bg-emerald-800"
@@ -506,6 +499,7 @@ export default function MapaPage() {
                                                         <i className="bi bi-send-fill tw-mr-2" aria-hidden="true" />
                                                         Aplicar a este empleo
                                                     </button>
+                                                    )}
                                                 </article>
                                             );
                                         })}

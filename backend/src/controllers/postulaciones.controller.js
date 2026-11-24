@@ -13,9 +13,50 @@ const listar = async (req, res) => {
                 { model: Perfil, attributes: { exclude: ['password_hash'] } },
                 { model: Oferta, as: 'Oferta' }
             ],
-            order: [['created_at', 'DESC']]
+            order: [['createdAt', 'DESC']]
         });
-        res.json(postulaciones);
+        const respuesta = postulaciones.map(postulacion => {
+            const datos = postulacion.toJSON();
+            return {
+                ...datos,
+                updated_at: datos.updated_at || datos.updatedAt || postulacion.updatedAt,
+                created_at: datos.created_at || datos.createdAt || postulacion.createdAt,
+                Oferta: datos.Oferta || null
+            };
+        });
+        res.json(respuesta);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const listarPorEmpleador = async (req, res) => {
+    try {
+        const { empleador_id } = req.params;
+        const ofertas = await Oferta.findAll({
+            where: { empleador_id },
+            attributes: ['id', 'puesto']
+        });
+
+        const resultados = await Promise.all(ofertas.map(async oferta => {
+            const postulantes = await Postulacion.findAll({
+                where: { oferta_id: oferta.id },
+                include: [{ model: Perfil, attributes: { exclude: ['password_hash'] } }],
+                order: [['created_at', 'DESC']]
+            });
+
+            return postulantes.map(postulacion => ({
+                id: `postulacion-${postulacion.id}`,
+                postulacion_id: postulacion.id,
+                titulo: postulacion.Perfil?.nombre_apellido || 'Nuevo postulante',
+                texto: `Se postuló a ${oferta.puesto}`,
+                fecha: postulacion.createdAt,
+                nueva: true,
+                tipo: 'postulacion'
+            }));
+        }));
+
+        res.json(resultados.flat().sort((a, b) => new Date(b.fecha) - new Date(a.fecha)));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -24,6 +65,12 @@ const listar = async (req, res) => {
 const crear = async (req, res) => {
     try {
         const { perfil_id, oferta_id } = req.body;
+
+        const oferta = await Oferta.findByPk(oferta_id);
+        if (!oferta) return res.status(404).json({ error: 'Oferta no encontrada' });
+        if (Number(oferta.empleador_id) === Number(perfil_id)) {
+            return res.status(403).json({ error: 'No podés postularte a una oferta publicada por tu propia cuenta' });
+        }
 
         const existente = await Postulacion.findOne({ where: { perfil_id, oferta_id } });
         if (existente) {
@@ -70,4 +117,4 @@ const eliminar = async (req, res) => {
     }
 };
 
-export { listar, crear, cambiarEstado, eliminar };
+export { listar, listarPorEmpleador, crear, cambiarEstado, eliminar };

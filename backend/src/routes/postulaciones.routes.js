@@ -6,6 +6,7 @@ import validate from '../middlewares/validations/validation.js';
 import { crearPostulacionValidation, cambiarEstadoValidation } from '../middlewares/postulacion.validations.js';
 
 router.get('/',      ctrl.listar);
+router.get('/empleador/:empleador_id', ctrl.listarPorEmpleador);
 router.post('/',     crearPostulacionValidation, validate, ctrl.crear);
 router.put('/:id',   cambiarEstadoValidation, validate, ctrl.cambiarEstado);
 router.delete('/:id', ctrl.eliminar);

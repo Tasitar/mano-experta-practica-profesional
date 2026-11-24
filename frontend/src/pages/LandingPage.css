@@ -110,6 +110,18 @@
   margin-left: 10px;
 }
 
+.landing-logout {
+  margin-left: 10px;
+  color: #a33a3a;
+  border-color: #efdada;
+}
+
+.landing-logout:hover {
+  color: #fff;
+  border-color: #a33a3a;
+  background: #a33a3a;
+}
+
 .landing-inbox-button {
   width: 44px;
   height: 44px;

@@ -36,10 +36,11 @@ const herramientas = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { rol, perfilId } = useSesion();
+  const { rol, perfilId, cerrar } = useSesion();
   const [bandejaAbierta, setBandejaAbierta] = useState(false);
   const [notificaciones, setNotificaciones] = useState([]);
   const [cargandoNotificaciones, setCargandoNotificaciones] = useState(false);
+  const [recargaNotificaciones, setRecargaNotificaciones] = useState(0);
 
   const claveVistas = rol && perfilId ? `mano_experta_notificaciones_vistas_${rol}_${perfilId}` : null;
 
@@ -64,20 +65,7 @@ export default function LandingPage() {
       setCargandoNotificaciones(true);
       try {
         if (rol === 'empleador') {
-          const { data: ofertas } = await OfertasService.listar('', perfilId);
-          const resultados = await Promise.all(
-            ofertas.map(async oferta => {
-              const { data: postulantes } = await OfertasService.postulantes(oferta.id);
-              return postulantes.map(postulacion => ({
-                id: `postulacion-${postulacion.id}`,
-                titulo: postulacion.Perfil?.nombre_apellido || 'Nuevo postulante',
-                texto: `Se postuló a ${oferta.puesto}`,
-                fecha: postulacion.created_at,
-                nueva: postulacion.estado === 'Pendiente',
-                tipo: 'postulacion'
-              }));
-            })
-          );
+          const { data: resultados } = await PostulacionesService.porEmpleador(perfilId);
 
           if (activo) {
             const vistas = obtenerVistas();
@@ -98,12 +86,12 @@ export default function LandingPage() {
                 id: `estado-${postulacion.id}`,
                 titulo: postulacion.Oferta?.puesto || 'Tu postulación',
                 texto: postulacion.estado === 'Aceptado'
-                  ? 'El empleador te aceptó'
+                  ? 'Has sido contratado. Esperá a que el empleador se comunique con vos al número de teléfono que informaste.'
                   : postulacion.estado === 'Rechazado'
                     ? 'Tu postulación fue rechazada'
                     : 'El empleador vio tu postulación',
-                fecha: postulacion.updated_at,
-                nueva: postulacion.estado === 'Aceptado',
+                fecha: postulacion.updated_at || postulacion.updatedAt || postulacion.created_at || postulacion.createdAt,
+                nueva: postulacion.estado !== 'Pendiente',
                 tipo: postulacion.estado === 'Rechazado' ? 'rechazo' : 'estado'
               }))
               .map(notificacion => ({
@@ -122,16 +110,31 @@ export default function LandingPage() {
     };
 
     cargarNotificaciones();
+    const intervalo = window.setInterval(cargarNotificaciones, 5000);
+    const actualizarAlVolver = () => {
+      if (document.visibilityState === 'visible') cargarNotificaciones();
+    };
+    document.addEventListener('visibilitychange', actualizarAlVolver);
+    window.addEventListener('focus', cargarNotificaciones);
+    window.addEventListener('storage', cargarNotificaciones);
+
     return () => {
       activo = false;
+      window.clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', actualizarAlVolver);
+      window.removeEventListener('focus', cargarNotificaciones);
+      window.removeEventListener('storage', cargarNotificaciones);
     };
-  }, [rol, perfilId]);
+  }, [rol, perfilId, recargaNotificaciones]);
 
   const contadorNuevas = notificaciones.filter(notificacion => notificacion.nueva).length;
 
   const abrirBandeja = () => {
     setBandejaAbierta(actual => {
       const vaAabrirse = !actual;
+      if (vaAabrirse) {
+        setRecargaNotificaciones(actualRecarga => actualRecarga + 1);
+      }
       if (vaAabrirse && claveVistas) {
         const vistas = obtenerVistas();
         const ids = notificaciones.map(notificacion => notificacion.id);
@@ -149,6 +152,11 @@ export default function LandingPage() {
     } else {
       navigate('/cv');
     }
+  };
+
+  const salir = () => {
+    cerrar();
+    navigate('/');
   };
 
   return (
@@ -169,6 +177,14 @@ export default function LandingPage() {
           <div className="landing-actions ms-auto d-flex align-items-center">
             {rol ? <>
               <SelectorModo fondoClaro mostrarInicio={false} mostrarSalir={false} />
+              <button
+                type="button"
+                className="landing-inbox-button landing-logout"
+                aria-label="Cerrar sesión"
+                onClick={salir}
+              >
+                <i className="bi bi-box-arrow-right" aria-hidden="true" />
+              </button>
               <div className="landing-inbox position-relative">
                 <button
                   type="button"

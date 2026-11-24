@@ -88,6 +88,7 @@ export default function CVPage() {
     const [toast,         setToast]         = useState('');
     const [error,         setError]         = useState('');
     const [guardando,     setGuardando]     = useState(false);
+    const [editandoDatos, setEditandoDatos] = useState(false);
     const [eliminandoPostulacion, setEliminandoPostulacion] = useState(null);
     const [form, setForm] = useState({
         nombre_apellido: '', fecha_nacimiento: '',
@@ -95,27 +96,47 @@ export default function CVPage() {
     });
 
     useEffect(() => {
-        if (perfilId) {
-            PerfilesService.obtener(perfilId)
-                .then(r => {
-                    setPerfil(r.data);
-                    setForm({
-                        nombre_apellido: r.data.nombre_apellido || '',
-                        fecha_nacimiento: r.data.fecha_nacimiento || '',
-                        domicilio: r.data.domicilio || '',
-                        telefono: r.data.telefono || '',
-                        aptitudes: r.data.aptitudes || '',
-                        experiencias: r.data.experiencias || '',
-                        foto_perfil: r.data.foto_perfil || null
-                    });
-                    return PostulacionesService.porPerfil(perfilId);
-                })
-                .then(r => setPostulaciones(r.data))
-                .catch(err => setError(err.response?.data?.error || 'No se pudo cargar tu perfil.'))
-                .finally(() => setCargando(false));
-        } else {
+        if (!perfilId) {
             setCargando(false);
+            return undefined;
         }
+
+        let activo = true;
+
+        const cargarDatos = async () => {
+            try {
+                const [perfilResult, postulacionesResult] = await Promise.all([
+                    PerfilesService.obtener(perfilId),
+                    PostulacionesService.porPerfil(perfilId)
+                ]);
+
+                if (!activo) return;
+
+                setPerfil(perfilResult.data);
+                setForm({
+                    nombre_apellido: perfilResult.data.nombre_apellido || '',
+                    fecha_nacimiento: perfilResult.data.fecha_nacimiento || '',
+                    domicilio: perfilResult.data.domicilio || '',
+                    telefono: perfilResult.data.telefono || '',
+                    aptitudes: perfilResult.data.aptitudes || '',
+                    experiencias: perfilResult.data.experiencias || '',
+                    foto_perfil: perfilResult.data.foto_perfil || null
+                });
+                setPostulaciones(postulacionesResult.data);
+            } catch (err) {
+                if (activo) setError(err.response?.data?.error || 'No se pudo cargar tu perfil.');
+            } finally {
+                if (activo) setCargando(false);
+            }
+        };
+
+        cargarDatos();
+        const intervalo = window.setInterval(cargarDatos, 5000);
+
+        return () => {
+            activo = false;
+            window.clearInterval(intervalo);
+        };
     }, [perfilId]);
 
     const handleSubmit = async (e) => {
@@ -125,6 +146,9 @@ export default function CVPage() {
         try {
             const { data } = perfil
                 ? await PerfilesService.editar(perfil.id, {
+                    nombre_apellido: form.nombre_apellido,
+                    fecha_nacimiento: form.fecha_nacimiento,
+                    domicilio: form.domicilio,
                     telefono: form.telefono,
                     aptitudes: form.aptitudes,
                     experiencias: form.experiencias,
@@ -133,6 +157,7 @@ export default function CVPage() {
                 : await PerfilesService.crear(form);
             if (!perfil) guardarPerfilId(data.id);
             setPerfil(data);
+            setEditandoDatos(false);
             mostrarToast('CV guardado correctamente.');
         } catch (err) {
             const errores = err.response?.data?.errors;
@@ -329,6 +354,16 @@ export default function CVPage() {
                                                 {perfil.telefono || 'Teléfono no informado'}
                                             </p>
                                         </div>
+                                        <button
+                                            type="button"
+                                            className="tw-ml-auto tw-flex tw-h-8 tw-w-8 tw-shrink-0 tw-items-center tw-justify-center tw-rounded-lg tw-bg-white/15 tw-text-sm tw-text-white tw-transition hover:tw-bg-white/25 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-white/70"
+                                            onClick={() => setEditandoDatos(actual => !actual)}
+                                            aria-label={editandoDatos ? 'Cerrar edición de datos personales' : 'Editar datos personales'}
+                                            aria-expanded={editandoDatos}
+                                            title={editandoDatos ? 'Cerrar edición' : 'Editar datos'}
+                                        >
+                                            <i className={`bi ${editandoDatos ? 'bi-x-lg' : 'bi-pencil-fill'}`} aria-hidden="true" />
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="tw-p-5">
@@ -337,24 +372,62 @@ export default function CVPage() {
                                         Los empleadores verán esta información cuando te postules a una oferta.
                                     </p>
                                     <form onSubmit={handleSubmit}>
+                                        {editandoDatos && (
+                                            <div className="tw-mb-5 tw-grid tw-grid-cols-1 tw-gap-4 tw-rounded-2xl tw-border tw-border-emerald-100 tw-bg-emerald-50/70 tw-p-4 sm:tw-grid-cols-2">
+                                                <div>
+                                                    <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="editar-nombre">Nombre y apellido</label>
+                                                    <input
+                                                        id="editar-nombre"
+                                                        type="text"
+                                                        className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                        value={form.nombre_apellido}
+                                                        onChange={e => setForm({ ...form, nombre_apellido: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="editar-fecha-nacimiento">Fecha de nacimiento</label>
+                                                    <input
+                                                        id="editar-fecha-nacimiento"
+                                                        type="date"
+                                                        className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                        value={form.fecha_nacimiento}
+                                                        onChange={e => setForm({ ...form, fecha_nacimiento: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="editar-domicilio">Dirección</label>
+                                                    <input
+                                                        id="editar-domicilio"
+                                                        type="text"
+                                                        className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                        value={form.domicilio}
+                                                        onChange={e => setForm({ ...form, domicilio: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto</label>
+                                                    <input
+                                                        id="telefono"
+                                                        type="tel"
+                                                        maxLength={30}
+                                                        autoComplete="tel"
+                                                        className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-white tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none focus:tw-border-emerald-500 focus:tw-ring-4 focus:tw-ring-emerald-100"
+                                                        placeholder="Ej: +54 9 370 400-0000"
+                                                        value={form.telefono}
+                                                        onChange={e => setForm({ ...form, telefono: e.target.value })}
+                                                    />
+                                                </div>
+                                                <p className="tw-m-0 tw-text-xs tw-text-slate-500 sm:tw-col-span-2">Cuando termines, guardá los cambios con el botón de abajo.</p>
+                                            </div>
+                                        )}
                                         <SelectorFotoPerfil
                                             foto={form.foto_perfil}
                                             onChange={cambiarFotoPerfil}
                                             onEliminar={() => setForm(actual => ({ ...actual, foto_perfil: null }))}
                                         />
-                                        <div className="tw-mb-4">
-                                            <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="telefono">Teléfono de contacto</label>
-                                            <input
-                                                id="telefono"
-                                                type="tel"
-                                                maxLength={30}
-                                                autoComplete="tel"
-                                                className="tw-w-full tw-rounded-xl tw-border tw-border-slate-200 tw-bg-slate-50 tw-px-3 tw-py-2.5 tw-text-sm tw-text-slate-800 tw-outline-none tw-transition placeholder:tw-text-slate-400 focus:tw-border-emerald-500 focus:tw-bg-white focus:tw-ring-4 focus:tw-ring-emerald-100"
-                                                placeholder="Ej: +54 9 370 400-0000"
-                                                value={form.telefono}
-                                                onChange={e => setForm({ ...form, telefono: e.target.value })}
-                                            />
-                                        </div>
                                         <div className="tw-mb-4">
                                             <label className="tw-mb-1.5 tw-block tw-text-sm tw-font-semibold tw-text-slate-700" htmlFor="aptitudes">Aptitudes</label>
                                             <textarea
@@ -438,10 +511,23 @@ export default function CVPage() {
                                                 </button>
                                             </div>
                                         </div>
-                                        {p.estado === 'Rechazado' && p.nota_rechazo && (
+                                        {p.estado === 'Aceptado' && (
+                                            <div className="tw-mt-3 tw-rounded-xl tw-border tw-border-emerald-100 tw-bg-emerald-50 tw-p-3">
+                                                <p className="tw-m-0 tw-text-sm tw-font-semibold tw-text-emerald-800">
+                                                    Has sido contratado. Esperá a ser contactado por la persona que publicó el puesto.
+                                                </p>
+                                            </div>
+                                        )}
+                                        {p.estado === 'Rechazado' && (
                                             <div className="tw-mt-3 tw-rounded-xl tw-bg-red-50 tw-p-3">
-                                                <p className="tw-mb-1 tw-text-xs tw-font-bold tw-text-red-800">Nota del empleador</p>
-                                                <p className="tw-m-0 tw-whitespace-pre-wrap tw-break-words tw-text-sm tw-text-red-700">{p.nota_rechazo}</p>
+                                                {p.nota_rechazo ? (
+                                                    <>
+                                                        <p className="tw-mb-1 tw-text-xs tw-font-bold tw-text-red-800">Motivo del rechazo</p>
+                                                        <p className="tw-m-0 tw-whitespace-pre-wrap tw-break-words tw-text-sm tw-text-red-700">{p.nota_rechazo}</p>
+                                                    </>
+                                                ) : (
+                                                    <p className="tw-m-0 tw-text-sm tw-font-semibold tw-text-red-700">Tu postulación fue rechazada.</p>
+                                                )}
                                             </div>
                                         )}
                                     </article>
